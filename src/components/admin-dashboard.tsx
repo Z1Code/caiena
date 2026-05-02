@@ -34,7 +34,11 @@ interface Stats {
 type ViewMode = "today" | "week";
 type AdminTab = "reservas" | "staff" | "horarios" | "grupos" | "servicios";
 
-export function AdminDashboard() {
+interface AdminDashboardProps {
+  canManageUsers?: boolean;
+}
+
+export function AdminDashboard({ canManageUsers = false }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>("reservas");
   const [stats, setStats] = useState<Stats | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
