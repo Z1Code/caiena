@@ -16,6 +16,7 @@
  * user provides their name.
  */
 
+import crypto from "crypto";
 import { db } from "@/db";
 import {
   whatsappSessions,
@@ -24,6 +25,7 @@ import {
   blockedTimes,
   waUsers,
   whatsappLinkTokens,
+  userProfiles,
 } from "@/db/schema";
 import { eq, and, gte, lte, gt, isNull, inArray } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
@@ -609,10 +611,87 @@ async function handleRemindCancel(to: string, bookingId: string, party: string):
   }
 }
 
+// ─── Phone linking via HMAC token ─────────────────────────────────────────────
+
+async function handlePhoneLink(from: string, tokenStr: string): Promise<void> {
+  const secret = process.env.AUTH_SECRET
+  if (!secret) return
+
+  try {
+    const [payload, signature] = tokenStr.split(".")
+    if (!payload || !signature) {
+      await sendText(from, "❌ El enlace no es válido. Genera uno nuevo desde tu panel.")
+      return
+    }
+
+    // Verify HMAC
+    const expectedSig = crypto
+      .createHmac("sha256", secret)
+      .update(payload)
+      .digest("base64url")
+
+    if (expectedSig !== signature) {
+      await sendText(from, "❌ El enlace no es válido. Genera uno nuevo desde tu panel.")
+      return
+    }
+
+    // Verify expiry
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"))
+    const nowSec = Math.floor(Date.now() / 1000)
+    if (nowSec - data.iat > 900) {
+      await sendText(from, "❌ El enlace expiró (15 min). Genera uno nuevo desde tu panel.")
+      return
+    }
+
+    // Check if already linked
+    const existing = await db.query.userProfiles.findFirst({
+      where: eq(userProfiles.googleId, data.sub),
+    })
+
+    if (!existing) {
+      await sendText(from, "❌ Cuenta no encontrada. Inicia sesión primero en caienanails.com/login")
+      return
+    }
+
+    if (existing.linkedAt) {
+      await sendText(from, "✅ Tu cuenta ya estaba conectada. Puedes ver tus citas en caienanails.com/dashboard")
+      return
+    }
+
+    // Check phone not taken by another account
+    const phoneConflict = await db.query.userProfiles.findFirst({
+      where: eq(userProfiles.whatsappPhone, from),
+    })
+    if (phoneConflict && phoneConflict.googleId !== data.sub) {
+      await sendText(from, "❌ Este número ya está vinculado a otra cuenta Google.")
+      return
+    }
+
+    // Link the phone
+    await db
+      .update(userProfiles)
+      .set({ whatsappPhone: from, linkedAt: new Date() })
+      .where(eq(userProfiles.googleId, data.sub))
+
+    await sendText(
+      from,
+      `✅ ¡Tu cuenta está conectada!\n\nYa puedes ver tus citas y reservar más fácil en:\ncaienanails.com/dashboard`
+    )
+  } catch {
+    await sendText(from, "❌ Error procesando el enlace. Intenta de nuevo.")
+  }
+}
+
 // ─── Main entry point ─────────────────────────────────────────────────────────
 
 export async function handleMessage(from: string, message: KapsoMessage): Promise<void> {
   const input = extractInput(message);
+
+  // Phone linking from web dashboard
+  if (input?.startsWith("LINK|")) {
+    await handlePhoneLink(from, input.slice(5))
+    return
+  }
 
   // Multi-service booking from landing page catalog
   if (input && input.startsWith("BOOKING|")) {
