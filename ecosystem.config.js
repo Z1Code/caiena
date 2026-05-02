@@ -19,6 +19,13 @@ module.exports = {
         // Google OAuth (for WhatsApp user identity) — set these after creating OAuth client
         GOOGLE_OAUTH_CLIENT_ID: "",
         GOOGLE_OAUTH_CLIENT_SECRET: "",
+        // Auth.js (Google OAuth)
+        AUTH_SECRET: "W6Gw3bacafFb24WbBz5QnYFiSEv6P3FLUeQUqcB3iJ6a",
+        AUTH_GOOGLE_ID: "PLACEHOLDER_REPLACE_BEFORE_DEPLOY",
+        AUTH_GOOGLE_SECRET: "PLACEHOLDER_REPLACE_BEFORE_DEPLOY",
+        AUTH_TRUST_HOST: "true",
+        SUPERADMIN_EMAILS: "wjjfernandez@gmail.com",
+        LOYALTY_MILESTONE: "10",
       },
       instances: 1,
       autorestart: true,
