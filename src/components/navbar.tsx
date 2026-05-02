@@ -108,7 +108,7 @@ export function Navbar() {
                 Agendar
               </a>
               <a
-                href="/login"
+                href="/dashboard"
                 onClick={() => setOpen(false)}
                 className="border border-foreground/20 text-foreground/70 text-sm px-5 py-3 rounded-full text-center mt-1 tracking-wide"
               >
