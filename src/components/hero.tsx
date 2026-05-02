@@ -68,10 +68,10 @@ export async function Hero() {
             {/* CTAs */}
             <div className="animate-fade-up [animation-delay:400ms] flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
               <a
-                href="#servicios"
+                href="/reservar"
                 className="shimmer-btn bg-foreground text-white px-10 py-4 rounded-full text-sm tracking-[0.15em] uppercase hover:bg-accent-dark transition-colors shadow-xl shadow-foreground/10"
               >
-                Ver Servicios
+                Agendar
               </a>
               <a
                 href="/prueba-virtual"
