@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { services } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { auth } from "../../../../../../auth"
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth()
+  if (!session || (session.user.role !== "admin" && session.user.role !== "superadmin")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
   const { id } = await params;
   const svcId = parseInt(id);
   if (isNaN(svcId)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
@@ -48,6 +53,10 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth()
+  if (!session || (session.user.role !== "admin" && session.user.role !== "superadmin")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
   const { id } = await params;
   const svcId = parseInt(id);
   if (isNaN(svcId)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });

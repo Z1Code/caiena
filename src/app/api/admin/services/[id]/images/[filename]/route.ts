@@ -4,11 +4,16 @@ import { services } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { unlink } from "fs/promises";
 import path from "path";
+import { auth } from "../../../../../../../../auth"
 
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string; filename: string }> }
 ) {
+  const session = await auth()
+  if (!session || (session.user.role !== "admin" && session.user.role !== "superadmin")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
   const { id, filename } = await params;
   const svcId = parseInt(id);
   if (isNaN(svcId)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });

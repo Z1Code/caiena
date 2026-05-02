@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { services } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
+import { auth } from "../../../../../auth"
 
 export async function GET() {
+  const session = await auth()
+  if (!session || (session.user.role !== "admin" && session.user.role !== "superadmin")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
   const rows = await db
     .select()
     .from(services)
@@ -12,6 +17,10 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await auth()
+  if (!session || (session.user.role !== "admin" && session.user.role !== "superadmin")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
   const body = await request.json();
   const { name, description, durationMinutes, price, category } = body;
 
