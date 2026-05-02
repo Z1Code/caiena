@@ -147,6 +147,20 @@ export const waUsers = pgTable("wa_users", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// USER PROFILES — links Google accounts to WhatsApp phones + portal role
+// ─────────────────────────────────────────────────────────────────────────────
+export const userProfiles = pgTable("user_profiles", {
+  id: serial("id").primaryKey(),
+  googleId: text("google_id").unique().notNull(),
+  email: text("email").notNull(),
+  role: text("role").notNull().default("user"), // 'user' | 'admin' (superadmin from env only)
+  whatsappPhone: text("whatsapp_phone").unique(),
+  displayName: text("display_name"),
+  linkedAt: timestamp("linked_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+})
+
 // Short-lived tokens linking a WA session to a Google OAuth flow
 export const whatsappAuthTokens = pgTable("whatsapp_auth_tokens", {
   id: serial("id").primaryKey(),
@@ -308,3 +322,5 @@ export type StaffSchedule = typeof staffSchedules.$inferSelect;
 export type SlotGroup = typeof slotGroups.$inferSelect;
 export type AdminRole = typeof adminRoles.$inferSelect;
 export type WhatsappLinkToken = typeof whatsappLinkTokens.$inferSelect;
+export type UserProfile = typeof userProfiles.$inferSelect
+export type NewUserProfile = typeof userProfiles.$inferInsert
