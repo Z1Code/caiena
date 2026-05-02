@@ -1,0 +1,99 @@
+<style>
+  .spec { max-width: 760px; margin: 0 auto; }
+  .spec-section { margin-bottom: 28px; }
+  .spec-section h3 { font-size: 11px; letter-spacing: 0.25em; color: rgba(184,144,122,0.9); text-transform: uppercase; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid rgba(184,144,122,0.15); }
+  .feature-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+  .feat-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .feat-icon.new { background: rgba(184,144,122,0.2); }
+  .feat-icon.change { background: rgba(201,144,143,0.2); }
+  .feat-icon.admin { background: rgba(196,162,101,0.2); }
+  .feat-body h4 { font-size: 13px; color: #fff; margin-bottom: 2px; }
+  .feat-body p { font-size: 11px; color: rgba(255,255,255,0.45); line-height: 1.5; }
+  .tag { display: inline-block; font-size: 9px; padding: 2px 7px; border-radius: 8px; margin-right: 4px; }
+  .tag-new { background: rgba(184,144,122,0.2); color: #b8907a; }
+  .tag-change { background: rgba(201,144,143,0.2); color: #c9908f; }
+  .tag-admin { background: rgba(196,162,101,0.2); color: #c4a265; }
+  .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+  .flow-step { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 8px 14px; font-size: 11px; color: rgba(255,255,255,0.7); }
+  .flow-arrow { color: rgba(184,144,122,0.5); font-size: 14px; }
+  .flow-step.highlight { background: rgba(184,144,122,0.15); border-color: rgba(184,144,122,0.3); color: #dcc8bc; }
+</style>
+
+<h2>Resumen del Diseño — Aprobación Final</h2>
+<p class="subtitle">Todo lo que se va a construir en una sola vista</p>
+
+<div class="spec">
+
+  <div class="spec-section">
+    <h3>Nuevo flujo de reserva</h3>
+    <div class="flow">
+      <div class="flow-step highlight">Landing · Catálogo de servicios</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step highlight">Selección múltiple</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step highlight">Summary card flotante</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step highlight">WhatsApp con resumen</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">Bot agenda fecha/hora</div>
+    </div>
+    <p style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:8px">La página /reservar (wizard) se mantiene como alternativa — el nuevo flujo vive en la landing</p>
+  </div>
+
+  <div class="spec-section">
+    <h3>Landing page — cambios visuales</h3>
+    <div class="feature-row">
+      <div class="feat-icon new">🌊</div>
+      <div class="feat-body"><h4>Morphing blobs en toda la landing <span class="tag tag-new">nuevo</span></h4><p>Blobs orgánicos rosados/dorados en hero, servicios y about. CSS puro, 0 JS extra.</p></div>
+    </div>
+    <div class="feature-row">
+      <div class="feat-icon new">✨</div>
+      <div class="feat-body"><h4>Scroll reveal con Framer Motion <span class="tag tag-new">nuevo</span></h4><p>Cada sección entra con fadeUp + spring al hacer scroll. Stagger entre cards.</p></div>
+    </div>
+    <div class="feature-row">
+      <div class="feat-icon change">🛍️</div>
+      <div class="feat-body"><h4>Servicios como catálogo seleccionable <span class="tag tag-change">cambia</span></h4><p>Cards con imagen carousel, nombre, duración. Sin precio visible. Toggle select con checkmark animado. Carrusel de imágenes por servicio.</p></div>
+    </div>
+    <div class="feature-row">
+      <div class="feat-icon new">📋</div>
+      <div class="feat-body"><h4>Summary bar sticky <span class="tag tag-new">nuevo</span></h4><p>Aparece cuando hay ≥1 servicio seleccionado. Lista los servicios elegidos + botón WhatsApp gigante.</p></div>
+    </div>
+    <div class="feature-row">
+      <div class="feat-icon change">💬</div>
+      <div class="feat-body"><h4>Mensaje WhatsApp mejorado <span class="tag tag-change">cambia</span></h4><p>Payload: "BOOKING|svcId1,svcId2|..." — bot saluda, confirma servicios y pide fecha/hora.</p></div>
+    </div>
+  </div>
+
+  <div class="spec-section">
+    <h3>Panel de administrador — servicios como productos</h3>
+    <div class="feature-row">
+      <div class="feat-icon admin">🖼️</div>
+      <div class="feat-body"><h4>Imágenes por servicio <span class="tag tag-admin">admin</span></h4><p>Upload múltiple de fotos (hasta 6 por servicio). Se muestran en carrusel en la landing.</p></div>
+    </div>
+    <div class="feature-row">
+      <div class="feat-icon admin">💲</div>
+      <div class="feat-body"><h4>Precio editable en admin <span class="tag tag-admin">admin</span></h4><p>Precio no visible en landing — solo se incluye en el resumen WhatsApp opcional y en admin.</p></div>
+    </div>
+    <div class="feature-row">
+      <div class="feat-icon admin">✏️</div>
+      <div class="feat-body"><h4>CRUD completo de servicios <span class="tag tag-admin">admin</span></h4><p>Crear, editar, reordenar (drag), activar/desactivar servicios. Editor de descripción.</p></div>
+    </div>
+  </div>
+
+  <div class="spec-section">
+    <h3>Infraestructura técnica</h3>
+    <div class="feature-row">
+      <div class="feat-icon new">⚡</div>
+      <div class="feat-body"><h4>Framer Motion para animaciones</h4><p>npm install framer-motion · whileInView + spring + stagger · solo en Client Components</p></div>
+    </div>
+    <div class="feature-row">
+      <div class="feat-icon new">🗄️</div>
+      <div class="feat-body"><h4>Columna images en tabla services</h4><p>Drizzle migration: services.images text[] (URLs). Upload via /api/admin/services/[id]/images.</p></div>
+    </div>
+    <div class="feature-row">
+      <div class="feat-icon change">🤖</div>
+      <div class="feat-body"><h4>Bot actualizado para BOOKING| payload</h4><p>handleBookingRequest: saluda, lista servicios seleccionados, pide fecha.</p></div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caiena — Design Preview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #111; font-family: system-ui, sans-serif; color: #fff; }
+
+  /* ── FRAME ── */
+  .frame { max-width: 900px; margin: 0 auto; padding: 32px 24px 48px; }
+  .frame-title { font-size: 11px; letter-spacing: 0.3em; color: rgba(255,255,255,0.3); text-transform: uppercase; margin-bottom: 8px; }
+  .frame-sub { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 32px; }
+  .section-label { font-size: 10px; letter-spacing: 0.25em; color: rgba(184,144,122,0.7); text-transform: uppercase; margin: 40px 0 14px; border-bottom: 1px solid rgba(184,144,122,0.15); padding-bottom: 8px; }
+
+  /* ── TOKENS ── */
+  .token-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; margin-bottom: 12px; }
+  .token { border-radius: 8px; height: 48px; position: relative; }
+  .token-label { font-size: 8px; color: rgba(255,255,255,0.4); margin-top: 4px; text-align: center; }
+  .token-new { position: absolute; top: -6px; right: -4px; background: #b8907a; color: #fff; font-size: 7px; padding: 1px 4px; border-radius: 4px; }
+
+  /* ── HERO MOCKUP ── */
+  @keyframes morph1 {
+    0%,100% { border-radius: 60% 40% 55% 45% / 50% 60% 40% 50%; }
+    25% { border-radius: 40% 60% 45% 55% / 60% 40% 55% 45%; }
+    50% { border-radius: 55% 45% 60% 40% / 45% 55% 45% 55%; }
+    75% { border-radius: 45% 55% 40% 60% / 55% 45% 60% 40%; }
+  }
+  @keyframes morph2 {
+    0%,100% { border-radius: 40% 60% 60% 40% / 60% 30% 70% 40%; }
+    50% { border-radius: 60% 40% 30% 70% / 40% 70% 30% 60%; }
+  }
+  @keyframes morph3 {
+    0%,100% { border-radius: 70% 30% 40% 60% / 40% 60% 40% 60%; }
+    33% { border-radius: 30% 70% 60% 40% / 60% 40% 60% 40%; }
+    66% { border-radius: 50% 50% 30% 70% / 50% 50% 70% 30%; }
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+  .hero-mock {
+    border-radius: 20px;
+    overflow: hidden;
+    background: linear-gradient(155deg, #faf8f6 0%, #f2e8e2 35%, #ecdfd8 70%, #f7f0eb 100%);
+    min-height: 480px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* BLOBS */
+  .blob { position: absolute; filter: blur(55px); pointer-events: none; }
+  .blob-1 { width: 340px; height: 340px; background: rgba(201,144,143,0.28); top: -60px; right: -80px; animation: morph1 12s ease-in-out infinite; }
+  .blob-2 { width: 260px; height: 260px; background: rgba(196,162,101,0.2); bottom: -40px; left: -60px; animation: morph2 9s ease-in-out infinite; }
+  .blob-3 { width: 180px; height: 180px; background: rgba(184,144,122,0.22); top: 40%; left: 30%; animation: morph3 14s ease-in-out infinite; }
+  .blob-4 { width: 120px; height: 120px; background: rgba(220,200,188,0.35); top: 20%; right: 25%; animation: morph1 8s ease-in-out infinite reverse; }
+
+  /* NAV */
+  .mock-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px;
+    position: relative; z-index: 10;
+    background: rgba(250,248,246,0.7);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(184,144,122,0.12);
+  }
+  .nav-logo { display: flex; align-items: center; gap: 10px; }
+  .nav-logo-badge {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, #ecd9cf, #dcc8bc);
+    display: flex; align-items: center; justify-content: center;
+    font-family: Georgia, serif; font-size: 14px; font-style: italic; color: #8c6854;
+    box-shadow: 0 2px 8px rgba(140,104,84,0.2);
+  }
+  .nav-logo-text span { display: block; font-size: 14px; font-family: Georgia, serif; color: #1a1215; letter-spacing: 0.02em; }
+  .nav-logo-text small { font-size: 8px; letter-spacing: 0.25em; color: #a09490; text-transform: uppercase; }
+  .nav-links { display: flex; gap: 24px; align-items: center; }
+  .nav-link { font-size: 10px; letter-spacing: 0.15em; color: #5c3d2e; text-transform: uppercase; opacity: 0.7; text-decoration: none; }
+  .nav-cta {
+    background: #1a1215; color: #fff; padding: 8px 18px; border-radius: 30px;
+    font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
+    position: relative; overflow: hidden;
+  }
+  .nav-cta::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.12) 50%, transparent 70%);
+    transform: translateX(-100%);
+    animation: shimmer 3s infinite;
+  }
+  @keyframes shimmer { to { transform: translateX(200%); } }
+
+  /* HERO CONTENT */
+  .hero-content {
+    flex: 1; display: flex; align-items: center;
+    padding: 40px 48px;
+    position: relative; z-index: 10;
+  }
+  .hero-left { flex: 1; }
+  .hero-eyebrow {
+    font-size: 9px; letter-spacing: 0.4em; color: #a09490; text-transform: uppercase;
+    margin-bottom: 16px; animation: fadeUp 0.6s ease both;
+  }
+  .hero-title {
+    font-family: Georgia, serif;
+    font-size: 72px; line-height: 0.9; font-weight: 400;
+    color: #1a1215; margin-bottom: 20px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+  .hero-title .gradient-word {
+    background: linear-gradient(135deg, #8c6854 0%, #c9908f 40%, #c4a265 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    display: block;
+  }
+  .hero-desc {
+    font-size: 13px; color: #6b4c3b; line-height: 1.7; max-width: 340px;
+    margin-bottom: 28px; opacity: 0.75;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+  .hero-btns { display: flex; gap: 12px; animation: fadeUp 0.6s 0.3s ease both; }
+  .btn-primary {
+    background: #1a1215; color: #fff; padding: 13px 26px; border-radius: 40px;
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    position: relative; overflow: hidden;
+    box-shadow: 0 4px 20px rgba(26,18,21,0.25);
+  }
+  .btn-secondary {
+    border: 1.5px solid rgba(140,104,84,0.35); color: #8c6854;
+    padding: 13px 26px; border-radius: 40px;
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    background: rgba(255,255,255,0.5); backdrop-filter: blur(8px);
+  }
+
+  /* GLASS CARD */
+  .hero-right { flex-shrink: 0; width: 220px; animation: fadeUp 0.6s 0.4s ease both; }
+  .glass-card {
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.8);
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: 0 8px 40px rgba(140,104,84,0.12), 0 2px 8px rgba(255,255,255,0.8) inset;
+    animation: float 6s ease-in-out infinite;
+  }
+  .card-tag { font-size: 8px; letter-spacing: 0.25em; color: #b8907a; text-transform: uppercase; margin-bottom: 12px; }
+  .card-service { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(184,144,122,0.15); }
+  .card-service:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+  .svc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .svc-info { flex: 1; }
+  .svc-name { font-size: 11px; color: #2d1a22; font-weight: 500; }
+  .svc-price { font-size: 9px; color: #a09490; }
+  .card-btn {
+    width: 100%; margin-top: 14px; background: #1a1215; color: #fff;
+    border: none; padding: 10px; border-radius: 16px;
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  /* STATS */
+  .hero-stats {
+    display: flex; gap: 0; border-top: 1px solid rgba(184,144,122,0.15);
+    position: relative; z-index: 10; background: rgba(250,248,246,0.6);
+    backdrop-filter: blur(8px);
+  }
+  .stat { flex: 1; padding: 16px 24px; text-align: center; border-right: 1px solid rgba(184,144,122,0.12); }
+  .stat:last-child { border-right: none; }
+  .stat-num {
+    font-family: Georgia, serif; font-size: 22px; font-style: italic;
+    background: linear-gradient(135deg, #8c6854, #c9908f); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-label { font-size: 8px; letter-spacing: 0.2em; color: #a09490; text-transform: uppercase; margin-top: 2px; }
+
+  /* ── SERVICES SECTION PREVIEW ── */
+  .services-mock { margin-top: 4px; background: linear-gradient(180deg, #faf8f6, #f7f0eb); border-radius: 20px; padding: 36px 32px; position: relative; overflow: hidden; }
+  .services-blob { position: absolute; width: 300px; height: 300px; background: rgba(220,200,188,0.25); filter: blur(60px); bottom: -80px; right: -60px; animation: morph2 10s ease-in-out infinite; pointer-events: none; }
+  .section-eyebrow { font-size: 9px; letter-spacing: 0.4em; color: #b8907a; text-transform: uppercase; text-align: center; margin-bottom: 8px; }
+  .section-title { font-family: Georgia, serif; font-size: 36px; font-weight: 400; color: #1a1215; text-align: center; margin-bottom: 28px; }
+  .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; position: relative; z-index: 2; }
+  .svc-card {
+    background: rgba(255,255,255,0.6); backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.9); border-radius: 20px; padding: 20px 18px;
+    box-shadow: 0 4px 20px rgba(140,104,84,0.08);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .svc-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(140,104,84,0.14); }
+  .svc-num { font-family: Georgia, serif; font-size: 32px; font-style: italic; color: rgba(184,144,122,0.2); line-height: 1; margin-bottom: 8px; }
+  .svc-title { font-size: 13px; font-weight: 600; color: #2d1a22; margin-bottom: 4px; }
+  .svc-desc { font-size: 10px; color: #a09490; line-height: 1.5; margin-bottom: 12px; }
+  .svc-footer { display: flex; justify-content: space-between; align-items: center; }
+  .svc-price-tag { font-family: Georgia, serif; font-size: 18px; color: #8c6854; }
+  .svc-dur { font-size: 9px; color: #c0a898; background: rgba(184,144,122,0.1); padding: 3px 8px; border-radius: 10px; }
+
+  /* ── DESIGN TOKENS ── */
+  .token-section { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .token-group h4 { font-size: 10px; letter-spacing: 0.2em; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 12px; }
+  .token-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .token-swatch { width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; }
+  .token-info { flex: 1; }
+  .token-name { font-size: 11px; color: rgba(255,255,255,0.75); }
+  .token-val { font-size: 10px; color: rgba(255,255,255,0.35); font-family: monospace; }
+  .new-badge { font-size: 8px; background: rgba(184,144,122,0.25); color: #b8907a; padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+
+  .approval-bar {
+    margin-top: 32px; padding: 16px 20px; border-radius: 12px;
+    background: rgba(184,144,122,0.08); border: 1px solid rgba(184,144,122,0.2);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .approval-text { font-size: 12px; color: rgba(255,255,255,0.6); }
+  .approval-btns { display: flex; gap: 10px; }
+  .btn-approve { background: rgba(184,144,122,0.2); border: 1px solid rgba(184,144,122,0.4); color: #b8907a; padding: 8px 20px; border-radius: 20px; font-size: 11px; cursor: pointer; }
+  .btn-approve:hover { background: rgba(184,144,122,0.35); }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="frame-title">Caiena — Frontend Redesign · Glass & Bloom + Framer Motion</div>
+  <div class="frame-sub">Secciones 1–2 de 5 · Hero + Sistema de Servicios</div>
+
+  <!-- TOKENS -->
+  <div class="section-label">Sistema de Diseño — Nuevos Tokens</div>
+  <div class="token-section">
+    <div class="token-group">
+      <h4>Colores (sin cambios)</h4>
+      <div class="token-row"><div class="token-swatch" style="background:#faf8f6;border:1px solid rgba(255,255,255,0.1)"></div><div class="token-info"><div class="token-name">background</div><div class="token-val">#faf8f6</div></div></div>
+      <div class="token-row"><div class="token-swatch" style="background:#b8907a"></div><div class="token-info"><div class="token-name">accent</div><div class="token-val">#b8907a</div></div></div>
+      <div class="token-row"><div class="token-swatch" style="background:#c9908f"></div><div class="token-info"><div class="token-name">rose</div><div class="token-val">#c9908f</div></div></div>
+      <div class="token-row"><div class="token-swatch" style="background:#c4a265"></div><div class="token-info"><div class="token-name">gold</div><div class="token-val">#c4a265</div></div></div>
+    </div>
+    <div class="token-group">
+      <h4>Nuevas utilidades</h4>
+      <div class="token-row"><div class="token-swatch" style="background:rgba(255,255,255,0.55);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.8)"></div><div class="token-info"><div class="token-name">glass-card <span class="new-badge">nuevo</span></div><div class="token-val">bg-white/55 + backdrop-blur-xl</div></div></div>
+      <div class="token-row"><div class="token-swatch" style="background:linear-gradient(135deg,rgba(201,144,143,0.28),rgba(196,162,101,0.2));border-radius:60% 40% 55% 45%"></div><div class="token-info"><div class="token-name">blob-layer <span class="new-badge">nuevo</span></div><div class="token-val">morph keyframe + blur-[55px]</div></div></div>
+      <div class="token-row"><div class="token-swatch" style="background:linear-gradient(135deg,#8c6854,#c9908f,#c4a265)"></div><div class="token-info"><div class="token-name">gradient-text <span class="new-badge">mejorado</span></div><div class="token-val">3-stop diagonal</div></div></div>
+      <div class="token-row"><div class="token-swatch" style="background:rgba(26,18,21,1);border-radius:4px"></div><div class="token-info"><div class="token-name">shimmer-btn <span class="new-badge">mejorado</span></div><div class="token-val">shimmer loop 3s</div></div></div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="section-label">Sección 1 — Hero (con blobs animados)</div>
+  <div class="hero-mock">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
+
+    <nav class="mock-nav">
+      <div class="nav-logo">
+        <div class="nav-logo-badge">C</div>
+        <div class="nav-logo-text">
+          <span>Caiena</span>
+          <small>Beauty Nails</small>
+        </div>
+      </div>
+      <div class="nav-links">
+        <a class="nav-link">Servicios</a>
+        <a class="nav-link">Prueba IA</a>
+        <a class="nav-link">Gallery</a>
+        <a class="nav-link">Gift Cards</a>
+        <div class="nav-cta">Agendar</div>
+      </div>
+    </nav>
+
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow">Nail Art Studio · Leander, Texas</div>
+        <div class="hero-title">
+          Cai<span class="gradient-word">ena</span>
+        </div>
+        <div class="hero-desc">Donde cada uña es una obra de arte. Manicure, pedicure y diseños personalizados.</div>
+        <div class="hero-btns">
+          <div class="btn-primary">Reservar Cita</div>
+          <div class="btn-secondary">✨ Probar con IA</div>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="glass-card">
+          <div class="card-tag">Servicios populares</div>
+          <div class="card-service">
+            <div class="svc-dot" style="background:#c9908f"></div>
+            <div class="svc-info"><div class="svc-name">Manicure Gel</div><div class="svc-price">$45 · 60 min</div></div>
+          </div>
+          <div class="card-service">
+            <div class="svc-dot" style="background:#c4a265"></div>
+            <div class="svc-info"><div class="svc-name">Nail Art</div><div class="svc-price">$65 · 90 min</div></div>
+          </div>
+          <div class="card-service">
+            <div class="svc-dot" style="background:#b8907a"></div>
+            <div class="svc-info"><div class="svc-name">Polygel</div><div class="svc-price">$55 · 75 min</div></div>
+          </div>
+          <button class="card-btn">Ver todos →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">1K+</div><div class="stat-label">Seguidores</div></div>
+      <div class="stat"><div class="stat-num">200+</div><div class="stat-label">Trabajos</div></div>
+      <div class="stat"><div class="stat-num">5+</div><div class="stat-label">Años Exp.</div></div>
+      <div class="stat"><div class="stat-num">★ 5.0</div><div class="stat-label">Rating</div></div>
+    </div>
+  </div>
+
+  <!-- SERVICES -->
+  <div class="section-label">Sección 2 — Servicios (glass cards con scroll reveal)</div>
+  <div class="services-mock">
+    <div class="services-blob"></div>
+    <div class="section-eyebrow">Lo que hacemos</div>
+    <div class="section-title">Servicios</div>
+    <div class="services-grid">
+      <div class="svc-card">
+        <div class="svc-num">01</div>
+        <div class="svc-title">Manicure Clásico</div>
+        <div class="svc-desc">Limpieza, corte y esmaltado profesional</div>
+        <div class="svc-footer"><span class="svc-price-tag">$30</span><span class="svc-dur">45 min</span></div>
+      </div>
+      <div class="svc-card">
+        <div class="svc-num">02</div>
+        <div class="svc-title">Gel Nails</div>
+        <div class="svc-desc">Gel de larga duración con acabado impecable</div>
+        <div class="svc-footer"><span class="svc-price-tag">$45</span><span class="svc-dur">60 min</span></div>
+      </div>
+      <div class="svc-card">
+        <div class="svc-num">03</div>
+        <div class="svc-title">Nail Art</div>
+        <div class="svc-desc">Diseños personalizados, flores, degradados</div>
+        <div class="svc-footer"><span class="svc-price-tag">$65</span><span class="svc-dur">90 min</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPROVAL -->
+  <div class="approval-bar">
+    <div class="approval-text">¿Cómo se ve la dirección? Hero + Servicios — ¿aprobado para continuar con Galería, About y Booking?</div>
+  </div>
+</div>
+</body>
+</html>

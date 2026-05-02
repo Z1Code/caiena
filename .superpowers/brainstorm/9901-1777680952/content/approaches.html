@@ -1,0 +1,140 @@
+<style>
+  .approach-list { display: flex; flex-direction: column; gap: 16px; margin-top: 24px; }
+  .approach { border-radius: 14px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: all 0.25s; background: rgba(255,255,255,0.04); }
+  .approach:hover { border-color: rgba(184,144,122,0.5); }
+  .approach.selected { border-color: #b8907a; box-shadow: 0 0 0 3px rgba(184,144,122,0.2); }
+  .approach-header { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: rgba(255,255,255,0.06); }
+  .approach-badge { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0; }
+  .badge-a { background: linear-gradient(135deg, rgba(196,162,101,0.3), rgba(201,144,143,0.3)); color: #c4a265; border: 1px solid rgba(196,162,101,0.4); }
+  .badge-b { background: linear-gradient(135deg, rgba(184,144,122,0.3), rgba(220,200,188,0.3)); color: #b8907a; border: 1px solid rgba(184,144,122,0.4); }
+  .badge-c { background: linear-gradient(135deg, rgba(201,144,143,0.3), rgba(196,162,101,0.2)); color: #c9908f; border: 1px solid rgba(201,144,143,0.4); }
+  .approach-title { flex: 1; }
+  .approach-title h3 { margin: 0 0 2px; font-size: 15px; color: #fff; }
+  .approach-title .tagline { font-size: 11px; color: rgba(255,255,255,0.4); }
+  .rec-tag { font-size: 9px; padding: 3px 10px; border-radius: 20px; background: rgba(184,144,122,0.2); color: #b8907a; border: 1px solid rgba(184,144,122,0.3); letter-spacing: 0.1em; white-space: nowrap; }
+  .approach-body { padding: 14px 20px 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .approach-section h4 { margin: 0 0 6px; font-size: 10px; letter-spacing: 0.2em; color: rgba(255,255,255,0.35); text-transform: uppercase; }
+  .approach-section ul { margin: 0; padding-left: 14px; }
+  .approach-section ul li { font-size: 11px; color: rgba(255,255,255,0.65); line-height: 1.7; }
+  .approach-section ul li span { color: #b8907a; }
+  .effort-bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.1); margin-top: 6px; overflow: hidden; }
+  .effort-fill { height: 100%; border-radius: 2px; }
+  .effort-label { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 4px; }
+</style>
+
+<h2>¿Cómo atacamos el redesign?</h2>
+<p class="subtitle">3 enfoques distintos — mismo resultado final, diferente estrategia de ejecución</p>
+
+<div class="approach-list">
+
+  <!-- Approach A: CSS-first -->
+  <div class="approach" data-choice="css-first" onclick="toggleSelect(this)">
+    <div class="approach-header">
+      <div class="approach-badge badge-a">A</div>
+      <div class="approach-title">
+        <h3>CSS-First + Intersection Observer</h3>
+        <div class="tagline">Sin librerías nuevas — solo CSS moderno + Web APIs nativas</div>
+      </div>
+    </div>
+    <div class="approach-body">
+      <div class="approach-section">
+        <h4>Qué incluye</h4>
+        <ul>
+          <li>Blobs con <span>CSS @keyframes</span> border-radius</li>
+          <li>Scroll reveal con <span>IntersectionObserver</span></li>
+          <li>Glassmorphism via <span>backdrop-filter</span></li>
+          <li>Micro-interactions con <span>CSS transitions</span></li>
+          <li>Zero dependencias nuevas</li>
+        </ul>
+      </div>
+      <div class="approach-section">
+        <h4>Trade-offs</h4>
+        <ul>
+          <li>✅ Carga ultra-rápida</li>
+          <li>✅ Sin bundle size extra</li>
+          <li>✅ Compatible con todo</li>
+          <li>⚠️ Blobs menos fluidos</li>
+          <li>⚠️ Animaciones más simples</li>
+        </ul>
+        <div class="effort-bar"><div class="effort-fill" style="width:35%;background:linear-gradient(90deg,#b8907a,#c4a265)"></div></div>
+        <div class="effort-label">Esfuerzo: bajo · Riesgo: mínimo</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Approach B: Framer Motion (RECOMMENDED) -->
+  <div class="approach" data-choice="framer" onclick="toggleSelect(this)">
+    <div class="approach-header">
+      <div class="approach-badge badge-b">B</div>
+      <div class="approach-title">
+        <h3>Framer Motion + CSS Blobs</h3>
+        <div class="tagline">La combinación estándar de la industria para sitios premium</div>
+      </div>
+      <span class="rec-tag">★ RECOMENDADO</span>
+    </div>
+    <div class="approach-body">
+      <div class="approach-section">
+        <h4>Qué incluye</h4>
+        <ul>
+          <li>Blobs con <span>CSS keyframes</span> orgánicos</li>
+          <li>Scroll reveal con <span>Framer Motion</span> whileInView</li>
+          <li>Spring physics en tarjetas y botones</li>
+          <li>Page transitions suaves</li>
+          <li>Stagger elegante entre elementos</li>
+        </ul>
+      </div>
+      <div class="approach-section">
+        <h4>Trade-offs</h4>
+        <ul>
+          <li>✅ Animaciones de producción</li>
+          <li>✅ Spring physics natural</li>
+          <li>✅ API declarativa simple</li>
+          <li>⚠️ +100kb bundle (tree-shaken)</li>
+          <li>⚠️ Solo 'use client' components</li>
+        </ul>
+        <div class="effort-bar"><div class="effort-fill" style="width:60%;background:linear-gradient(90deg,#b8907a,#c9908f)"></div></div>
+        <div class="effort-label">Esfuerzo: medio · Resultado: premium</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Approach C: GSAP -->
+  <div class="approach" data-choice="gsap" onclick="toggleSelect(this)">
+    <div class="approach-header">
+      <div class="approach-badge badge-c">C</div>
+      <div class="approach-title">
+        <h3>GSAP + tsParticles</h3>
+        <div class="tagline">El nivel de un estudio de diseño — máxima expresividad</div>
+      </div>
+    </div>
+    <div class="approach-body">
+      <div class="approach-section">
+        <h4>Qué incluye</h4>
+        <ul>
+          <li>Partículas reales con <span>tsParticles</span></li>
+          <li>Timeline animations con <span>GSAP</span></li>
+          <li>ScrollTrigger para parallax</li>
+          <li>Morphing SVG paths</li>
+          <li>Cursor glow personalizado</li>
+        </ul>
+      </div>
+      <div class="approach-section">
+        <h4>Trade-offs</h4>
+        <ul>
+          <li>✅ Efecto WOW máximo</li>
+          <li>✅ Control total</li>
+          <li>⚠️ +250kb bundle</li>
+          <li>⚠️ GSAP comercial en prod</li>
+          <li>⚠️ Mayor complejidad</li>
+        </ul>
+        <div class="effort-bar"><div class="effort-fill" style="width:90%;background:linear-gradient(90deg,#c9908f,#c4a265)"></div></div>
+        <div class="effort-label">Esfuerzo: alto · Resultado: espectacular</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p style="text-align:center;margin-top:18px;font-size:11px;color:rgba(255,255,255,0.3)">
+  Mi recomendación: <strong style="color:rgba(184,144,122,0.8)">B — Framer Motion</strong> · El punto dulce entre calidad y mantenibilidad
+</p>
