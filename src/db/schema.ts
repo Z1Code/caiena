@@ -362,6 +362,34 @@ export const catalogQueue = pgTable("catalog_queue", {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Booking requests — web flow: Google login → date/time → WhatsApp confirmation
+// ─────────────────────────────────────────────────────────────────────────────
+export const bookingRequests = pgTable("booking_requests", {
+  id:          serial("id").primaryKey(),
+  token:       text("token").notNull().unique(),
+  googleId:    text("google_id").notNull(),
+  email:       text("email").notNull(),
+  name:        text("name").notNull(),
+  styleId:     integer("style_id"),
+  styleName:   text("style_name").notNull(),
+  desiredDate: text("desired_date").notNull(),  // "2026-05-20"
+  desiredTime: text("desired_time").notNull(),  // "10:00"
+  notes:       text("notes"),
+  phone:       text("phone"),                   // filled by bot when WA received
+  status:      text("status").notNull().default("pending"), // pending | phone_linked
+  expiresAt:   timestamp("expires_at",  { withTimezone: true }).notNull(),
+  createdAt:   timestamp("created_at",  { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Site settings — simple key/value for toggling sections
+// ─────────────────────────────────────────────────────────────────────────────
+export const siteSettings = pgTable("site_settings", {
+  key:   text("key").primaryKey(),
+  value: text("value").notNull(),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Type exports
 // ─────────────────────────────────────────────────────────────────────────────
 export type Service = typeof services.$inferSelect;
