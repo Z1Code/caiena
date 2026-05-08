@@ -26,6 +26,7 @@ import {
   waUsers,
   whatsappLinkTokens,
   userProfiles,
+  bookingRequests,
 } from "@/db/schema";
 import { eq, and, gte, lte, gt, isNull, inArray } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
@@ -286,6 +287,40 @@ async function handleVerifyLink(from: string, token: string): Promise<void> {
     .where(eq(whatsappLinkTokens.id, row.id));
 
   await sendText(from, "✅ ¡Verificado! Regresa a la web para continuar con tu reserva. 🌸");
+}
+
+async function handleWebBooking(from: string, token: string): Promise<void> {
+  const [row] = await db
+    .select()
+    .from(bookingRequests)
+    .where(
+      and(
+        eq(bookingRequests.token, token.toUpperCase()),
+        gt(bookingRequests.expiresAt, new Date()),
+        eq(bookingRequests.status, "pending")
+      )
+    );
+
+  if (!row) {
+    await sendText(from, "Este enlace de reserva no es válido o ya expiró. Vuelve al sitio web para intentarlo de nuevo. 💅");
+    return;
+  }
+
+  await db
+    .update(bookingRequests)
+    .set({ phone: from, status: "phone_linked" })
+    .where(eq(bookingRequests.id, row.id));
+
+  const dateStr = formatDateEs(row.desiredDate);
+  await sendText(
+    from,
+    `✅ ¡Recibido, ${row.name.split(" ")[0]}!\n\n` +
+    `📌 *Diseño:* ${row.styleName}\n` +
+    `📅 *Fecha:* ${dateStr}\n` +
+    `🕐 *Hora:* ${row.desiredTime}\n` +
+    `📧 *Cuenta:* ${row.email}\n\n` +
+    `Tu número de WhatsApp quedó vinculado a tu cuenta. Te confirmaremos disponibilidad en breve. 🌸`
+  );
 }
 
 async function handleBookingRequest(from: string, idsStr: string): Promise<void> {
@@ -705,6 +740,13 @@ export async function handleMessage(from: string, message: KapsoMessage): Promis
   if (input && input.startsWith("CAIENA|VERIFY|")) {
     const token = input.slice("CAIENA|VERIFY|".length).trim();
     await handleVerifyLink(from, token);
+    return;
+  }
+
+  // Web booking confirmation: user sent "CAIENA|BOOK|{TOKEN}" from their phone
+  if (input && input.startsWith("CAIENA|BOOK|")) {
+    const token = input.slice("CAIENA|BOOK|".length).trim();
+    await handleWebBooking(from, token);
     return;
   }
 
