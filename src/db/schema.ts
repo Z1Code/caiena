@@ -157,6 +157,7 @@ export const userProfiles = pgTable("user_profiles", {
   role: text("role").notNull().default("user"), // 'user' | 'admin' (superadmin from env only)
   whatsappPhone: text("whatsapp_phone").unique(),
   displayName: text("display_name"),
+  handPhotoUrl: text("hand_photo_url"), // stored hand photo for try-on /uploads/hands/xxx.jpg
   linkedAt: timestamp("linked_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 })
@@ -304,6 +305,63 @@ export const adminRoles = pgTable("admin_roles", {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// NAIL STYLES — catalog of nail designs for AI try-on
+// ─────────────────────────────────────────────────────────────────────────────
+export const nailStyles = pgTable("nail_styles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  category: text("category").notNull(), // french | gel | chrome | nail_art | minimal | bold | seasonal
+  prompt: text("prompt").notNull(),     // Gemini image prompt for this design
+  thumbnailUrl: text("thumbnail_url"),  // /uploads/nail-styles/xxx.jpg
+  // Granular filter attributes (populated by classify-nail-styles.mjs or admin auto-classify)
+  color: text("color"),        // nude | rosa | rojo | burdeos | blanco | negro | azul | verde | morado | lila | coral | multicolor | ...
+  acabado: text("acabado"),    // glossy | matte | chrome | glitter | satinado
+  forma: text("forma"),        // cuadrada | redonda | oval | almendra | stiletto | coffin
+  estilo: text("estilo"),      // french | solid | floral | geometrico | glitter_foil | ombre | chrome | minimalista | nail_art
+  // Promotional / visibility
+  badge: text("badge"),        // null | "Nuevo" | "Promo" | "Temporada" | "Popular" | "Limitado"
+  discountPercent: integer("discount_percent"), // null = no discount, 10 = 10% off
+  active: boolean("active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  published: boolean("published").notNull().default(false),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NAIL STYLE VARIANTS — one row per (design × base pose) image
+// ─────────────────────────────────────────────────────────────────────────────
+export const nailStyleVariants = pgTable(
+  "nail_style_variants",
+  {
+    id: serial("id").primaryKey(),
+    styleId: integer("style_id")
+      .notNull()
+      .references(() => nailStyles.id, { onDelete: "cascade" }),
+    baseId: text("base_id").notNull(), // garra | ascendente | doble | rocio
+    imagePath: text("image_path").notNull(), // public/ relative path
+    generatedAt: timestamp("generated_at", { withTimezone: true }).defaultNow().notNull(),
+    status: text("status").notNull().default("done"), // done | error
+    errorMsg: text("error_msg"),
+  },
+  (t) => [unique().on(t.styleId, t.baseId)]
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CATALOG QUEUE — tracks source images that have been processed
+// ─────────────────────────────────────────────────────────────────────────────
+export const catalogQueue = pgTable("catalog_queue", {
+  id: serial("id").primaryKey(),
+  sourceImagePath: text("source_image_path").notNull(),
+  sourceHash: text("source_hash").notNull().unique(), // sha256 hex of file content
+  styleId: integer("style_id").references(() => nailStyles.id),
+  status: text("status").notNull().default("queued"), // queued | processing | done | error
+  errorMsg: text("error_msg"),
+  queuedAt: timestamp("queued_at", { withTimezone: true }).defaultNow().notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Type exports
 // ─────────────────────────────────────────────────────────────────────────────
 export type Service = typeof services.$inferSelect;
@@ -324,3 +382,10 @@ export type AdminRole = typeof adminRoles.$inferSelect;
 export type WhatsappLinkToken = typeof whatsappLinkTokens.$inferSelect;
 export type UserProfile = typeof userProfiles.$inferSelect
 export type NewUserProfile = typeof userProfiles.$inferInsert
+export type NailStyle = typeof nailStyles.$inferSelect;
+export type NewNailStyle = typeof nailStyles.$inferInsert;
+export type UserProfileWithHand = typeof userProfiles.$inferSelect;
+export type NailStyleVariant = typeof nailStyleVariants.$inferSelect;
+export type NewNailStyleVariant = typeof nailStyleVariants.$inferInsert;
+export type CatalogQueueItem = typeof catalogQueue.$inferSelect;
+export type NewCatalogQueueItem = typeof catalogQueue.$inferInsert;
