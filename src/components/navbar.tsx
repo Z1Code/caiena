@@ -11,6 +11,48 @@ const links = [
   { href: "/reservar", label: "Reservar" },
 ];
 
+function CaienaLogo() {
+  return (
+    <svg
+      viewBox="0 0 220 52"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-10 w-auto"
+      aria-label="Caiena Beauty Nails"
+    >
+      {/* Nail drop ornament above the C */}
+      <ellipse cx="19" cy="6" rx="4.5" ry="7" fill="#B76E79" opacity="0.9" />
+      <path d="M14.5 10 Q19 18 23.5 10" stroke="#B76E79" strokeWidth="1.2" fill="none" />
+
+      {/* Main wordmark: "Caiena" in plum */}
+      <text
+        x="0"
+        y="36"
+        fontFamily="var(--font-cormorant), 'Cormorant Garamond', Georgia, serif"
+        fontSize="34"
+        fontWeight="400"
+        fill="#3A1020"
+        letterSpacing="1"
+      >
+        Caiena
+      </text>
+
+      {/* Subtitle: "BEAUTY NAILS" in rose gold */}
+      <text
+        x="2"
+        y="50"
+        fontFamily="var(--font-jost), 'Jost', sans-serif"
+        fontSize="9"
+        fontWeight="300"
+        fill="#B76E79"
+        letterSpacing="4"
+      >
+        BEAUTY NAILS
+      </text>
+    </svg>
+  );
+}
+
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -30,20 +72,10 @@ export function Navbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+        <div className="flex items-center justify-between h-20 sm:h-24">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blush/80 to-accent-light/50 border border-accent-light/40 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <span className="font-serif text-sm text-accent-dark italic">C</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-serif text-lg font-semibold text-foreground leading-none tracking-wide">
-                Caiena
-              </span>
-              <span className="text-[8px] text-muted tracking-[0.25em] uppercase leading-none mt-0.5">
-                Beauty Nails
-              </span>
-            </div>
+          <a href="/" className="flex items-center group">
+            <CaienaLogo />
           </a>
 
           {/* Desktop links */}
@@ -52,7 +84,7 @@ export function Navbar() {
               <a
                 key={link.href}
                 href={link.href}
-                className="elegant-underline text-xs text-foreground/60 hover:text-foreground transition-colors tracking-[0.08em] uppercase px-4 py-2"
+                className="elegant-underline text-sm text-foreground/70 hover:text-foreground transition-colors tracking-[0.06em] uppercase px-4 py-2"
               >
                 {link.label}
               </a>
@@ -67,21 +99,9 @@ export function Navbar() {
             aria-label="Toggle menu"
           >
             <div className="w-5 flex flex-col gap-1.5">
-              <span
-                className={`block h-px bg-current transition-all duration-300 ${
-                  open ? "rotate-45 translate-y-[4px]" : ""
-                }`}
-              />
-              <span
-                className={`block h-px bg-current transition-all duration-300 ${
-                  open ? "opacity-0" : ""
-                }`}
-              />
-              <span
-                className={`block h-px bg-current transition-all duration-300 ${
-                  open ? "-rotate-45 -translate-y-[4px]" : ""
-                }`}
-              />
+              <span className={`block h-px bg-current transition-all duration-300 ${open ? "rotate-45 translate-y-[4px]" : ""}`} />
+              <span className={`block h-px bg-current transition-all duration-300 ${open ? "opacity-0" : ""}`} />
+              <span className={`block h-px bg-current transition-all duration-300 ${open ? "-rotate-45 -translate-y-[4px]" : ""}`} />
             </div>
           </button>
         </div>
@@ -95,7 +115,7 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="text-sm text-foreground/60 hover:text-accent-dark px-3 py-2.5 rounded-xl hover:bg-accent-light/10 transition-colors tracking-wide"
+                  className="text-sm text-foreground/60 hover:text-foreground px-3 py-2.5 rounded-xl hover:bg-accent-light/10 transition-colors tracking-wide"
                 >
                   {link.label}
                 </a>
