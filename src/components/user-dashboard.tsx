@@ -1,8 +1,9 @@
 import { db } from "@/db"
-import { userProfiles, bookings, services } from "@/db/schema"
-import { eq, and, desc, gt, count } from "drizzle-orm"
+import { userProfiles, bookings, services, nailStyles, nailStyleVariants } from "@/db/schema"
+import { eq, and, desc, gt, count, asc } from "drizzle-orm"
 import { LinkWhatsAppCard } from "./link-whatsapp-card"
 import { BurnerNameModal } from "./burner-name-modal"
+import { DashboardCatalogClient } from "./catalog/DashboardCatalogClient"
 import Image from "next/image"
 import type { Session } from "next-auth"
 
@@ -78,6 +79,30 @@ export async function UserDashboard({ session }: { session: Session }) {
     .select({ count: count() })
     .from(bookings)
     .where(and(eq(bookings.clientPhone, phone), eq(bookings.status, "completed")))
+
+  // Fetch published catalog for design selection
+  const catalogStyles = await db
+    .select()
+    .from(nailStyles)
+    .where(eq(nailStyles.published, true))
+    .orderBy(asc(nailStyles.sortOrder), asc(nailStyles.id));
+
+  const catalogVariants = catalogStyles.length > 0
+    ? await db.select().from(nailStyleVariants).where(eq(nailStyleVariants.status, "done"))
+    : [];
+
+  const variantsByStyle = catalogVariants.reduce<Record<number, typeof catalogVariants>>(
+    (acc, v) => { (acc[v.styleId] ??= []).push(v); return acc; },
+    {}
+  );
+
+  const catalogData = catalogStyles.map((s) => ({
+    ...s,
+    variants: (variantsByStyle[s.id] ?? []).sort((a, b) => {
+      const order = ["garra", "ascendente", "doble", "rocio"];
+      return order.indexOf(a.baseId) - order.indexOf(b.baseId);
+    }),
+  }));
 
   const totalVisits = loyaltyResult?.count ?? 0
   const stampsInCurrentCycle = totalVisits % LOYALTY_MILESTONE
@@ -156,6 +181,15 @@ export async function UserDashboard({ session }: { session: Session }) {
             </p>
           )}
         </div>
+
+        {/* Catalog carousel for design selection */}
+        {catalogData.length > 0 && (
+          <section className="mb-10">
+            <h2 className="font-serif text-2xl font-semibold text-foreground mb-2 px-6">Elige tu diseño</h2>
+            <p className="text-sm text-muted mb-4 px-6">Selecciona el estilo que quieres en tu próxima cita</p>
+            <DashboardCatalogClient styles={catalogData} />
+          </section>
+        )}
 
         {/* Upcoming appointments */}
         <section className="mb-6">
