@@ -13,6 +13,43 @@
   --muted: #a09490;
 }
 
+/* ── Caiena luxury palette (rose/plum) ───────────────────────────── */
+:root {
+  --caiena-bg:        #FEF9F7;
+  --caiena-bg2:       #F7EDE8;
+  --caiena-rose:      #C98B8B;
+  --caiena-rose-dark: #B76E79;
+  --caiena-plum:      #3A1020;
+  --caiena-champagne: #E8D5C4;
+  --caiena-card:      #FFFFFF;
+}
+
+/* ── Catalog animations ───────────────────────────────────────────── */
+@keyframes liquidRise {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0%); }
+}
+
+@keyframes wave {
+  0%,100% { transform: translateX(0) scaleY(1); }
+  50%     { transform: translateX(-6%) scaleY(1.4); }
+}
+
+@keyframes drip {
+  from { height: 0; opacity: 0; }
+  to   { height: clamp(16px, 3vw, 28px); opacity: 1; }
+}
+
+@keyframes nailFloat {
+  0%,100% { transform: translateY(0px) rotate(-2deg); }
+  50%     { transform: translateY(-10px) rotate(-2deg); }
+}
+
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
