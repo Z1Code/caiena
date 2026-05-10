@@ -1,32 +1,33 @@
+import Image from "next/image";
 import { ScrollReveal, SpringReveal } from "@/components/scroll-reveal";
 
 export function About() {
   return (
-    <section id="sobre-mi" className="py-28 sm:py-36 relative overflow-hidden noise-overlay">
-      <div className="absolute inset-0 bg-white" />
-
-      {/* Blobs */}
-      <div className="blob blob-warm w-[400px] h-[400px] bottom-[-80px] left-[-100px] opacity-25" />
-      <div className="blob blob-b blob-gold w-[300px] h-[300px] top-[-40px] right-[-60px] opacity-20" />
+    <section id="sobre-mi" className="py-28 sm:py-36 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-white via-cream/30 to-white" />
+      <div className="blob blob-warm w-[350px] h-[350px] bottom-[-60px] left-[-80px] opacity-20" />
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
           {/* Image side */}
           <SpringReveal className="lg:col-span-5 relative">
-            <div className="aspect-[3/4] rounded-[2rem] bg-gradient-to-br from-blush/60 via-accent-light/30 to-cream overflow-hidden relative">
-              <div className="absolute inset-3 rounded-[1.5rem] border border-white/40" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-20 h-20 rounded-full bg-white/60 border border-accent-light/40 mx-auto mb-4 flex items-center justify-center shadow-lg shadow-accent/5">
-                    <span className="font-serif text-2xl text-accent-dark italic">R</span>
-                  </div>
-                  <p className="text-sm font-medium text-accent-dark">Roxanna</p>
-                  <p className="text-[10px] text-muted tracking-wider">@roxannaacosta</p>
-                </div>
+            <div className="aspect-[3/4] rounded-[2rem] overflow-hidden relative shadow-2xl shadow-accent/20">
+              <Image
+                src="/red.webp"
+                alt="Nail art by Roxanna"
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 90vw, 40vw"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/25 via-transparent to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-6">
+                <p className="text-white/80 text-xs tracking-[0.2em] uppercase">Roxanna Acosta</p>
+                <p className="text-white/50 text-[10px] tracking-wider">@caiena.us</p>
               </div>
             </div>
-            <div className="absolute -bottom-6 -right-6 w-24 h-24 rounded-2xl bg-gradient-to-br from-accent-light/20 to-blush/30 -z-10 hidden lg:block" />
-            <div className="absolute -top-4 -left-4 w-16 h-16 rounded-full bg-rose/10 -z-10 hidden lg:block" />
+            {/* Accent square */}
+            <div className="absolute -bottom-4 -right-4 w-20 h-20 rounded-xl bg-gradient-to-br from-blush/40 to-accent-light/20 -z-10 hidden lg:block" />
+            <div className="absolute -top-3 -left-3 w-12 h-12 rounded-full bg-rose/15 -z-10 hidden lg:block" />
           </SpringReveal>
 
           {/* Content side */}
@@ -43,20 +44,20 @@ export function About() {
             <div className="space-y-5 text-foreground/50 leading-relaxed">
               <ScrollReveal index={1}>
                 <p>
-                  Soy una apasionada del arte en unas con anos de experiencia
-                  creando disenos unicos para cada clienta.
+                  Soy una apasionada del arte en u\u00f1as con a\u00f1os de experiencia
+                  creando dise\u00f1os \u00fanicos para cada clienta.
                 </p>
               </ScrollReveal>
               <ScrollReveal index={2}>
                 <p>
                   Trabajo desde la comodidad de mi hogar en Leander, TX, ofreciendo
                   un ambiente relajado y privado donde disfrutas de un servicio
-                  profesional sin las prisas de un salon tradicional.
+                  profesional sin las prisas de un sal\u00f3n tradicional.
                 </p>
               </ScrollReveal>
               <ScrollReveal index={3}>
-                <p className="text-foreground/70 font-medium">
-                  Cada set de unas es una oportunidad para expresar tu personalidad.
+                <p className="text-foreground/70 font-medium italic font-serif text-lg">
+                  &ldquo;Cada set de u\u00f1as es una oportunidad para expresar tu personalidad.&rdquo;
                 </p>
               </ScrollReveal>
             </div>
