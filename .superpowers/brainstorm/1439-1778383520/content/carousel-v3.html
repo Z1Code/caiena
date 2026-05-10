@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caiena — Catálogo</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: #060606; color: #f0f0f0; font-family: 'Segoe UI', sans-serif; min-height: 100vh; overflow: hidden; }
+
+/* ─── VISTA 1: CARRUSEL ─── */
+#view-carousel {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.5s ease, filter 0.5s ease;
+}
+#view-carousel.dimmed {
+  opacity: 0.15;
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+.c-header { padding: 18px 20px 0; display: flex; justify-content: space-between; align-items: center; }
+.c-logo { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.45; }
+.c-title { padding: 16px 20px 4px; }
+.c-title h2 { font-size: 24px; font-weight: 300; letter-spacing: 0.5px; }
+.c-title p { font-size: 11px; opacity: 0.3; margin-top: 3px; letter-spacing: 1px; }
+
+/* Horizontal scroll carousel */
+.carousel-track-wrap { flex: 1; display: flex; align-items: center; overflow: hidden; }
+.carousel-track {
+  display: flex;
+  gap: 14px;
+  padding: 0 24px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.carousel-track::-webkit-scrollbar { display: none; }
+
+.design-card {
+  min-width: 150px;
+  height: 210px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+  scroll-snap-align: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, border-color 0.25s;
+}
+.design-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.25); }
+.design-card:active { transform: scale(0.97); }
+
+.dc-bg { position: absolute; inset: 0; }
+.dc-shine {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 50%);
+}
+.dc-gradient { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%); }
+.dc-info { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; }
+.dc-name { font-size: 13px; font-weight: 600; }
+.dc-tags { display: flex; gap: 3px; margin-top: 4px; flex-wrap: wrap; }
+.dc-tag { font-size: 9px; padding: 2px 6px; border-radius: 10px; background: rgba(255,255,255,0.12); }
+
+.c-hint { text-align: center; font-size: 10px; opacity: 0.22; padding: 10px 0 18px; letter-spacing: 1px; }
+
+/* ─── VISTA 2: POSES (encima del carrusel) ─── */
+#view-poses {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+#view-poses.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.poses-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+}
+.back-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12px; cursor: pointer;
+  transition: background 0.2s;
+}
+.back-btn:hover { background: rgba(255,255,255,0.14); }
+.back-btn:active { transform: scale(0.95); }
+.poses-title { font-size: 16px; font-weight: 500; }
+.poses-subtitle { font-size: 11px; opacity: 0.35; margin-top: 2px; }
+
+/* Deck de cartas */
+.deck-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+
+.deck-nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.nav-arrow {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.14);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 18px;
+  transition: background 0.2s, transform 0.15s;
+  user-select: none;
+}
+.nav-arrow:hover { background: rgba(255,255,255,0.14); }
+.nav-arrow:active { transform: scale(0.9); }
+
+.deck-wrap {
+  position: relative;
+  width: 180px;
+  height: 260px;
+  touch-action: pan-y;
+}
+
+.pose-card {
+  position: absolute;
+  width: 158px; height: 224px;
+  left: 50%; top: 50%;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.12);
+  overflow: hidden;
+  will-change: transform, opacity;
+}
+.pc-bg { position: absolute; inset: 0; }
+.pc-gradient { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 45%); }
+.pc-label { position: absolute; bottom: 12px; left: 12px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.6; }
+.pc-main { position: absolute; top: 10px; left: 12px; font-size: 11px; font-weight: 600; opacity: 0; }
+
+/* Pose dots */
+.pose-dots { display: flex; gap: 7px; justify-content: center; margin-top: 18px; }
+.pose-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: all 0.3s; }
+.pose-dot.active { background: white; transform: scale(1.4); }
+
+/* CTA */
+.poses-cta { padding: 16px 20px 28px; }
+.cta-btn {
+  width: 100%; padding: 14px;
+  background: white; color: #000;
+  border: none; border-radius: 12px;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer; letter-spacing: 0.2px;
+  transition: opacity 0.2s;
+}
+.cta-btn:hover { opacity: 0.88; }
+</style>
+</head>
+<body>
+
+<!-- VISTA 1: CARRUSEL -->
+<div id="view-carousel">
+  <div class="c-header">
+    <span class="c-logo">Caiena</span>
+  </div>
+  <div class="c-title">
+    <h2>Nuestros Diseños</h2>
+    <p>TOCA PARA VER LAS POSES</p>
+  </div>
+  <div class="carousel-track-wrap">
+    <div class="carousel-track" id="carouselTrack"></div>
+  </div>
+  <div class="c-hint">← DESLIZA PARA VER MÁS →</div>
+</div>
+
+<!-- VISTA 2: POSES (carta) -->
+<div id="view-poses">
+  <div class="poses-header">
+    <div class="back-btn" id="backBtn">← Volver</div>
+    <div>
+      <div class="poses-title" id="posesTitle"></div>
+      <div class="poses-subtitle">4 poses disponibles</div>
+    </div>
+  </div>
+
+  <div class="deck-area">
+    <div class="deck-nav">
+      <div class="nav-arrow" id="navPrev">←</div>
+      <div class="deck-wrap" id="deckWrap"></div>
+      <div class="nav-arrow" id="navNext">→</div>
+    </div>
+    <div class="pose-dots" id="poseDots"></div>
+  </div>
+
+  <div class="poses-cta">
+    <button class="cta-btn">Quiero este diseño para mi cita →</button>
+  </div>
+</div>
+
+<script>
+const DESIGNS = [
+  { name:'French Nude',  tags:['Nude','French','Glossy'],     bg:'linear-gradient(145deg,#2e1e18 0%,#0d0806 100%)' },
+  { name:'Stars Blanco', tags:['Blanco','Nail Art'],          bg:'linear-gradient(145deg,#1a2616 0%,#080d07 100%)' },
+  { name:'Rosa Sólido',  tags:['Rosa','Satinado'],            bg:'linear-gradient(145deg,#2a1420 0%,#0d080b 100%)' },
+  { name:'Rojo Mate',    tags:['Rojo','Matte'],               bg:'linear-gradient(145deg,#2a0c0c 0%,#0d0505 100%)' },
+  { name:'Ombré Nude',   tags:['Nude','Chrome','Ombré'],      bg:'linear-gradient(145deg,#181826 0%,#07070f 100%)' },
+  { name:'Glitter Gold', tags:['Dorado','Glitter'],           bg:'linear-gradient(145deg,#26200e 0%,#0d0d06 100%)' },
+];
+
+const POSES = [
+  { label:'Garra',      bg:'linear-gradient(145deg,#2a1a12,#0a0806)' },
+  { label:'Ascendente', bg:'linear-gradient(145deg,#12221a,#060d0a)' },
+  { label:'Doble',      bg:'linear-gradient(145deg,#12121e,#060609)' },
+  { label:'Rocío',      bg:'linear-gradient(145deg,#22220e,#0d0d06)' },
+];
+
+// ─── BUILD CAROUSEL ───────────────────────────────────────────
+const track = document.getElementById('carouselTrack');
+DESIGNS.forEach((d, idx) => {
+  const card = document.createElement('div');
+  card.className = 'design-card';
+  card.innerHTML = `
+    <div class="dc-bg" style="background:${d.bg}"></div>
+    <div class="dc-shine"></div>
+    <div class="dc-gradient"></div>
+    <div class="dc-info">
+      <div class="dc-name">${d.name}</div>
+      <div class="dc-tags">${d.tags.map(t=>`<span class="dc-tag">${t}</span>`).join('')}</div>
+    </div>`;
+  card.addEventListener('click', () => openPoses(idx));
+  track.appendChild(card);
+});
+
+// ─── DECK STATE ───────────────────────────────────────────────
+let poseIdx = 0;
+let isAnim = false;
+let activeDsign = 0;
+
+function relPos(i) {
+  const n = POSES.length;
+  let d = ((i - poseIdx) % n + n) % n;
+  if (d > n / 2) d -= n;
+  return d;
+}
+
+function buildDeck() {
+  const wrap = document.getElementById('deckWrap');
+  wrap.innerHTML = '';
+  const n = POSES.length;
+
+  // Render far first
+  const order = [...Array(n).keys()].sort((a,b) => Math.abs(relPos(b)) - Math.abs(relPos(a)));
+  order.forEach(i => {
+    const rel = relPos(i);
+    const card = document.createElement('div');
+    card.className = 'pose-card';
+    card.dataset.i = i;
+
+    const tx = -50 + rel * 10;
+    const ty = -50 + Math.abs(rel) * 9;
+    const rot = rel * 6;
+    const scale = 1 - Math.abs(rel) * 0.09;
+    const opacity = 1 - Math.abs(rel) * 0.25;
+
+    card.style.cssText = `
+      transform: translate(${tx}%,${ty}%) rotate(${rot}deg) scale(${scale});
+      opacity: ${opacity};
+      z-index: ${n - Math.abs(rel)};
+    `;
+
+    const p = POSES[i];
+    // Mix design color + pose color
+    card.innerHTML = `
+      <div class="pc-bg" style="background:${DESIGNS[activeDsign].bg}"></div>
+      <div class="pc-gradient"></div>
+      <div class="pc-label">${p.label}</div>`;
+    wrap.appendChild(card);
+  });
+
+  // Dots
+  const dots = document.getElementById('poseDots');
+  dots.innerHTML = '';
+  POSES.forEach((_,i) => {
+    const d = document.createElement('div');
+    d.className = 'pose-dot' + (i === poseIdx ? ' active' : '');
+    d.addEventListener('click', () => goTo(i - poseIdx));
+    dots.appendChild(d);
+  });
+}
+
+function goTo(dir) {
+  if (isAnim || dir === 0) return;
+  isAnim = true;
+  const n = POSES.length;
+
+  document.querySelectorAll('.pose-card').forEach(card => {
+    const i = parseInt(card.dataset.i);
+    const newRel = relPos(i) - dir;
+    let r = newRel;
+    if (r > n/2) r -= n;
+    if (r < -n/2) r += n;
+
+    const tx = -50 + r * 10;
+    const ty = -50 + Math.abs(r) * 9;
+    const rot = r * 6;
+    const scale = 1 - Math.abs(r) * 0.09;
+    const opacity = 1 - Math.abs(r) * 0.25;
+
+    card.style.transition = 'transform 0.52s cubic-bezier(0.34,1.15,0.64,1), opacity 0.4s ease';
+    card.style.transform = `translate(${tx}%,${ty}%) rotate(${rot}deg) scale(${scale})`;
+    card.style.opacity = opacity;
+    card.style.zIndex = n - Math.abs(r);
+  });
+
+  setTimeout(() => {
+    poseIdx = ((poseIdx + dir) % n + n) % n;
+    isAnim = false;
+    buildDeck();
+  }, 540);
+}
+
+// ─── OPEN / CLOSE ─────────────────────────────────────────────
+function openPoses(idx) {
+  activeDsign = idx;
+  poseIdx = 0;
+  document.getElementById('posesTitle').textContent = DESIGNS[idx].name;
+  document.getElementById('view-carousel').classList.add('dimmed');
+  document.getElementById('view-poses').classList.add('open');
+  buildDeck();
+}
+
+function closePoses() {
+  document.getElementById('view-carousel').classList.remove('dimmed');
+  document.getElementById('view-poses').classList.remove('open');
+}
+
+document.getElementById('backBtn').addEventListener('click', closePoses);
+document.getElementById('navNext').addEventListener('click', () => goTo(1));
+document.getElementById('navPrev').addEventListener('click', () => goTo(-1));
+
+// ─── SWIPE on deck ────────────────────────────────────────────
+let tx0 = 0, ty0 = 0;
+document.getElementById('deckWrap').addEventListener('touchstart', e => {
+  tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY;
+}, { passive: true });
+document.getElementById('deckWrap').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tx0;
+  const dy = e.changedTouches[0].clientY - ty0;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 38) goTo(dx < 0 ? 1 : -1);
+}, { passive: true });
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (document.getElementById('view-poses').classList.contains('open')) {
+    if (e.key === 'ArrowRight') goTo(1);
+    if (e.key === 'ArrowLeft') goTo(-1);
+    if (e.key === 'Escape') closePoses();
+  }
+});
+</script>
+</body>
+</html>

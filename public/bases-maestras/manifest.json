@@ -1,0 +1,37 @@
+{
+  "generated": "2026-05-10T02:49:01.549Z",
+  "bases": [
+    {
+      "id": "garra",
+      "label": "Garra",
+      "filename": "base_garra.jpg",
+      "publicPath": "/bases-maestras/base_garra.jpg",
+      "status": "skipped",
+      "error": null
+    },
+    {
+      "id": "ascendente",
+      "label": "Ascendente",
+      "filename": "base_ascendente.jpg",
+      "publicPath": "/bases-maestras/base_ascendente.jpg",
+      "status": "skipped",
+      "error": null
+    },
+    {
+      "id": "doble",
+      "label": "Doble",
+      "filename": "base_doble.jpg",
+      "publicPath": "/bases-maestras/base_doble.jpg",
+      "status": "generated",
+      "error": null
+    },
+    {
+      "id": "rocio",
+      "label": "Rocío",
+      "filename": "base_rocio.jpg",
+      "publicPath": "/bases-maestras/base_rocio.jpg",
+      "status": "skipped",
+      "error": null
+    }
+  ]
+}

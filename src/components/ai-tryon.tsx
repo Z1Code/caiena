@@ -1,34 +1,47 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
-const presetDesigns = [
-  { label: "Rosa Clasico", prompt: "classic soft pink gel nails with glossy finish" },
-  { label: "Rojo Elegante", prompt: "deep red gel nails with glossy finish, elegant and classic" },
-  { label: "French Tips", prompt: "classic french manicure with white tips and natural pink base, clean lines" },
-  { label: "Ombre Rosa", prompt: "pink to white ombre gradient nails with glossy finish" },
-  { label: "Negro Matte", prompt: "matte black nails with a sophisticated velvet finish" },
-  { label: "Chrome Dorado", prompt: "gold chrome mirror nails, highly reflective metallic finish" },
-  { label: "Nail Art Floral", prompt: "white base nails with delicate hand-painted pink and purple flowers" },
-  { label: "Glitter Festivo", prompt: "silver and gold glitter nails, sparkly party nails" },
+interface NailStyle {
+  id: number;
+  name: string;
+  description: string;
+  category: string;
+  thumbnailUrl: string | null;
+}
+
+const CATEGORIES = [
+  { key: "all", label: "Todos" },
+  { key: "french", label: "French" },
+  { key: "gel", label: "Gel" },
+  { key: "chrome", label: "Chrome" },
+  { key: "nail_art", label: "Nail Art" },
+  { key: "minimal", label: "Minimal" },
+  { key: "bold", label: "Bold" },
+  { key: "seasonal", label: "Temporada" },
 ];
 
 export function AITryOn() {
   const [handImage, setHandImage] = useState<string | null>(null);
-  const [referenceImage, setReferenceImage] = useState<string | null>(null);
-  const [selectedPreset, setSelectedPreset] = useState("");
+  const [styles, setStyles] = useState<NailStyle[]>([]);
+  const [selectedStyle, setSelectedStyle] = useState<NailStyle | null>(null);
+  const [activeCategory, setActiveCategory] = useState("all");
   const [customPrompt, setCustomPrompt] = useState("");
+  const [mode, setMode] = useState<"catalog" | "custom">("catalog");
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [mode, setMode] = useState<"preset" | "custom" | "reference">("preset");
+  const [remaining, setRemaining] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const refInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageUpload = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    setter: (v: string) => void
-  ) => {
+  useEffect(() => {
+    fetch("/api/nail-styles")
+      .then((r) => r.json())
+      .then((data) => setStyles(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
@@ -36,43 +49,46 @@ export function AITryOn() {
       return;
     }
     const reader = new FileReader();
-    reader.onloadend = () => setter(reader.result as string);
+    reader.onloadend = () => setHandImage(reader.result as string);
     reader.readAsDataURL(file);
     setError("");
+    setResultImage(null);
   };
 
+  const filteredStyles =
+    activeCategory === "all" ? styles : styles.filter((s) => s.category === activeCategory);
+
+  // Only show category tabs that have styles
+  const usedCategories = CATEGORIES.filter(
+    (c) => c.key === "all" || styles.some((s) => s.category === c.key)
+  );
+
   const handleGenerate = async () => {
-    if (!handImage) {
-      setError("Sube una foto de tu mano primero");
-      return;
-    }
+    if (!handImage) { setError("Sube una foto de tu mano primero"); return; }
+    if (mode === "catalog" && !selectedStyle) { setError("Selecciona un diseño"); return; }
+    if (mode === "custom" && !customPrompt.trim()) { setError("Describe el diseño"); return; }
 
     setLoading(true);
     setError("");
     setResultImage(null);
 
-    const designPrompt =
-      mode === "preset"
-        ? presetDesigns.find((d) => d.label === selectedPreset)?.prompt
-        : mode === "custom"
-        ? customPrompt
-        : undefined;
-
     try {
+      const body =
+        mode === "catalog"
+          ? { image: handImage, styleId: selectedStyle!.id }
+          : { image: handImage, designPrompt: customPrompt };
+
       const res = await fetch("/api/ai/try-on", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: handImage,
-          designPrompt,
-          referenceImage: mode === "reference" ? referenceImage : undefined,
-        }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) { setError(data.error ?? "Error al generar"); return; }
       setResultImage(data.image);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al generar");
+      if (typeof data.remaining === "number") setRemaining(data.remaining);
+    } catch {
+      setError("Error al generar. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -90,7 +106,7 @@ export function AITryOn() {
           type="file"
           accept="image/*"
           capture="environment"
-          onChange={(e) => handleImageUpload(e, setHandImage)}
+          onChange={handleImageUpload}
           className="hidden"
         />
         {handImage ? (
@@ -101,10 +117,7 @@ export function AITryOn() {
               className="rounded-2xl border border-accent-light/30"
             />
             <button
-              onClick={() => {
-                setHandImage(null);
-                setResultImage(null);
-              }}
+              onClick={() => { setHandImage(null); setResultImage(null); }}
               className="absolute top-2 right-2 bg-white/80 rounded-full p-1.5 hover:bg-white"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -130,95 +143,125 @@ export function AITryOn() {
       {handImage && (
         <div>
           <h3 className="font-serif text-lg font-medium text-foreground mb-3">
-            2. Elige el diseno
+            2. Elige el diseño
           </h3>
+
+          {/* Mode toggle */}
           <div className="flex gap-2 mb-4">
-            {([
-              { key: "preset" as const, label: "Estilos" },
-              { key: "custom" as const, label: "Describir" },
-              { key: "reference" as const, label: "Imagen Ref." },
-            ]).map(({ key, label }) => (
+            {(["catalog", "custom"] as const).map((m) => (
               <button
-                key={key}
-                onClick={() => setMode(key)}
+                key={m}
+                onClick={() => setMode(m)}
                 className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                  mode === key
+                  mode === m
                     ? "bg-accent text-white"
                     : "bg-cream border border-accent-light/30 text-foreground/60 hover:border-accent/40"
                 }`}
               >
-                {label}
+                {m === "catalog" ? "Catálogo" : "Personalizado"}
               </button>
             ))}
           </div>
 
-          {mode === "preset" && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {presetDesigns.map((d) => (
-                <button
-                  key={d.label}
-                  onClick={() => setSelectedPreset(d.label)}
-                  className={`p-3 rounded-xl text-sm text-center transition-all ${
-                    selectedPreset === d.label
-                      ? "bg-accent text-white"
-                      : "border border-accent-light/30 text-foreground/60 hover:border-accent/40"
-                  }`}
-                >
-                  {d.label}
-                </button>
-              ))}
-            </div>
+          {mode === "catalog" && (
+            <>
+              {/* Category filter */}
+              {usedCategories.length > 1 && (
+                <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1">
+                  {usedCategories.map((c) => (
+                    <button
+                      key={c.key}
+                      onClick={() => setActiveCategory(c.key)}
+                      className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors ${
+                        activeCategory === c.key
+                          ? "bg-accent/15 text-accent-dark font-medium border border-accent/30"
+                          : "border border-accent-light/20 text-foreground/50 hover:border-accent/30"
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {filteredStyles.length === 0 ? (
+                <p className="text-sm text-foreground/40 py-6 text-center">
+                  No hay diseños disponibles aún.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {filteredStyles.map((style) => {
+                    const selected = selectedStyle?.id === style.id;
+                    return (
+                      <button
+                        key={style.id}
+                        onClick={() => setSelectedStyle(style)}
+                        className={`group relative rounded-2xl overflow-hidden transition-all duration-200 text-left ${
+                          selected
+                            ? "ring-2 ring-accent shadow-lg shadow-accent/25 scale-[1.02]"
+                            : "ring-1 ring-black/5 hover:ring-accent-light/60 hover:scale-[1.01]"
+                        }`}
+                      >
+                        {/* Thumbnail */}
+                        {style.thumbnailUrl ? (
+                          <img
+                            src={style.thumbnailUrl}
+                            alt={style.name}
+                            className="w-full aspect-square object-cover"
+                          />
+                        ) : (
+                          <div className="w-full aspect-square bg-cream/60 flex items-center justify-center">
+                            <svg className="w-8 h-8 text-accent-light" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+                            </svg>
+                          </div>
+                        )}
+
+                        {/* Gradient mask + name overlay — always visible */}
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent pt-6 pb-2.5 px-2.5">
+                          <p className="text-xs font-medium text-white leading-tight truncate">
+                            {style.name}
+                          </p>
+                          {style.description && (
+                            <p className="text-[10px] text-white/60 truncate mt-0.5">
+                              {style.description}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Selected checkmark badge */}
+                        {selected && (
+                          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-accent flex items-center justify-center shadow-md">
+                            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
 
           {mode === "custom" && (
             <textarea
               value={customPrompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
-              placeholder="Describe el diseno que quieres... ej: unas rosa pastel con flores delicadas y acabado glossy"
+              placeholder="Describe el diseño que quieres... ej: uñas rosa pastel con flores delicadas y acabado glossy"
               rows={3}
               className="w-full px-4 py-3 rounded-xl border border-accent-light/40 bg-cream/30 text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-accent/60 transition-colors resize-none"
             />
           )}
-
-          {mode === "reference" && (
-            <div>
-              <input
-                ref={refInputRef}
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleImageUpload(e, setReferenceImage)}
-                className="hidden"
-              />
-              {referenceImage ? (
-                <div className="relative w-48">
-                  <img
-                    src={referenceImage}
-                    alt="Referencia"
-                    className="rounded-xl border border-accent-light/30"
-                  />
-                  <button
-                    onClick={() => setReferenceImage(null)}
-                    className="absolute top-2 right-2 bg-white/80 rounded-full p-1 hover:bg-white"
-                  >
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => refInputRef.current?.click()}
-                  className="w-48 aspect-square rounded-xl border-2 border-dashed border-accent-light/50 hover:border-accent/50 flex flex-col items-center justify-center gap-2 text-foreground/40 text-sm"
-                >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 001.5-1.5V5.25a1.5 1.5 0 00-1.5-1.5H3.75a1.5 1.5 0 00-1.5 1.5v14.25c0 .828.672 1.5 1.5 1.5z" />
-                  </svg>
-                  Subir imagen de referencia
-                </button>
-              )}
-            </div>
-          )}
         </div>
+      )}
+
+      {/* Remaining requests */}
+      {remaining !== null && (
+        <p className="text-xs text-foreground/40 text-center">
+          {remaining} prueba{remaining !== 1 ? "s" : ""} restante{remaining !== 1 ? "s" : ""} esta hora
+        </p>
       )}
 
       {/* Generate button */}
@@ -227,9 +270,8 @@ export function AITryOn() {
           onClick={handleGenerate}
           disabled={
             loading ||
-            (mode === "preset" && !selectedPreset) ||
-            (mode === "custom" && !customPrompt) ||
-            (mode === "reference" && !referenceImage)
+            (mode === "catalog" && !selectedStyle) ||
+            (mode === "custom" && !customPrompt.trim())
           }
           className="w-full bg-accent text-white py-3.5 rounded-full text-sm tracking-wide hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
@@ -243,7 +285,7 @@ export function AITryOn() {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>
-              Probar Diseno con IA
+              Probar Diseño con IA
             </>
           )}
         </button>
@@ -271,7 +313,9 @@ export function AITryOn() {
               />
             </div>
             <div>
-              <p className="text-xs text-foreground/40 mb-2">Con diseno</p>
+              <p className="text-xs text-foreground/40 mb-2">
+                Con {selectedStyle?.name ?? "diseño personalizado"}
+              </p>
               <img
                 src={resultImage}
                 alt="Preview"
@@ -284,7 +328,7 @@ export function AITryOn() {
               href="/reservar"
               className="flex-1 bg-accent text-white py-3 rounded-full text-sm text-center hover:bg-accent-dark transition-colors"
             >
-              Reservar Este Diseno
+              Reservar Este Diseño
             </a>
             <button
               onClick={handleGenerate}

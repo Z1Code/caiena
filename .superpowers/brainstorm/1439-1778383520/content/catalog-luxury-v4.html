@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caiena — Catálogo Editorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #050505;
+  --surface: #0e0e0e;
+  --border: rgba(255,255,255,0.08);
+  --text: #f4f1ee;
+  --text-dim: rgba(244,241,238,0.38);
+  --text-mid: rgba(244,241,238,0.65);
+  --serif: 'Cormorant Garamond', Georgia, serif;
+  --sans: 'Jost', 'Helvetica Neue', sans-serif;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-weight: 300;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════
+   NAV
+═══════════════════════════════════════════ */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 22px 40px;
+  background: linear-gradient(to bottom, rgba(5,5,5,0.95) 0%, transparent 100%);
+}
+.nav-logo {
+  font-family: var(--serif);
+  font-size: 20px; font-weight: 300; letter-spacing: 0.18em;
+  text-transform: uppercase; font-style: italic;
+}
+.nav-links {
+  display: flex; gap: 36px;
+  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--text-mid);
+}
+.nav-links span { cursor: pointer; transition: color 0.25s; }
+.nav-links span:hover { color: var(--text); }
+
+/* ═══════════════════════════════════════════
+   SECTION HEADER
+═══════════════════════════════════════════ */
+.section-head {
+  padding: 110px 40px 48px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+}
+.section-head-left {}
+.eyebrow {
+  font-size: 9px; letter-spacing: 0.35em; text-transform: uppercase;
+  color: var(--text-dim); margin-bottom: 12px;
+}
+.section-head h2 {
+  font-family: var(--serif);
+  font-size: clamp(34px, 5vw, 56px);
+  font-weight: 300; line-height: 1.05;
+  letter-spacing: 0.04em;
+}
+.section-head h2 em { font-style: italic; }
+.section-count {
+  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ═══════════════════════════════════════════
+   CAROUSEL
+═══════════════════════════════════════════ */
+.carousel-outer {
+  position: relative;
+  padding-bottom: 56px;
+}
+
+/* Fade masks on sides */
+.carousel-outer::before,
+.carousel-outer::after {
+  content: '';
+  position: absolute; top: 0; bottom: 56px; width: 48px; z-index: 5;
+  pointer-events: none;
+}
+.carousel-outer::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg), transparent);
+}
+.carousel-outer::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg), transparent);
+}
+
+.carousel-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 16px;
+  padding: 8px 40px 24px;
+}
+.carousel-track::-webkit-scrollbar { display: none; }
+
+/* ── CARD ───────────────────────────────── */
+.design-card {
+  flex: 0 0 calc(28vw);
+  max-width: 320px;
+  min-width: 200px;
+  scroll-snap-align: start;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.card-image-wrap {
+  aspect-ratio: 2/3;
+  overflow: hidden;
+  position: relative;
+  background: #111;
+}
+
+/* Subtle grain texture */
+.card-image-wrap::after {
+  content: '';
+  position: absolute; inset: 0; z-index: 2;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+.card-bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  transition: transform 0.9s var(--ease-out);
+}
+
+.design-card:hover .card-bg {
+  transform: scale(1.04);
+}
+
+/* Bottom gradient for legibility */
+.card-vignette {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 1;
+  height: 55%;
+  background: linear-gradient(to top, rgba(5,5,5,0.82) 0%, rgba(5,5,5,0.2) 60%, transparent 100%);
+}
+
+/* Pose indicator pills (top-left) */
+.card-poses {
+  position: absolute; top: 14px; left: 14px; z-index: 3;
+  display: flex; gap: 5px;
+}
+.pose-pip {
+  width: 20px; height: 3px; border-radius: 1px;
+  background: rgba(255,255,255,0.22);
+}
+.pose-pip.active { background: rgba(255,255,255,0.85); }
+
+/* NEW badge */
+.card-badge {
+  position: absolute; top: 14px; right: 14px; z-index: 3;
+  font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--text-dim);
+  border: 1px solid rgba(255,255,255,0.18);
+  padding: 3px 8px;
+}
+
+/* Card inner info (over vignette) */
+.card-info-over {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
+  padding: 16px 16px 18px;
+}
+.card-name-over {
+  font-family: var(--serif);
+  font-size: 16px; font-weight: 300;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
+/* Card footer (below image) */
+.card-footer {
+  padding: 14px 2px 0;
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-top: 1px solid var(--border);
+}
+.card-attrs {
+  font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--text-dim);
+  display: flex; gap: 0;
+}
+.card-attrs span + span::before { content: ' · '; opacity: 0.4; }
+.card-arrow {
+  font-size: 13px; color: var(--text-dim);
+  transition: transform 0.3s var(--ease-out), color 0.2s;
+}
+.design-card:hover .card-arrow {
+  transform: translateX(4px);
+  color: var(--text);
+}
+
+/* ── CAROUSEL CONTROLS ───────────────────── */
+.carousel-controls {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 40px;
+}
+.carousel-dots { display: flex; gap: 8px; }
+.carousel-dot {
+  width: 18px; height: 1px;
+  background: rgba(255,255,255,0.18);
+  cursor: pointer; transition: all 0.3s;
+}
+.carousel-dot.active {
+  background: rgba(255,255,255,0.75);
+  width: 36px;
+}
+.scroll-hint {
+  font-size: 9px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ════════════════════════════════════════════
+   OVERLAY — POSE DECK
+════════════════════════════════════════════ */
+.overlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; flex-direction: column;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+.overlay.open { opacity: 1; pointer-events: all; }
+
+/* Click on backdrop → close */
+.overlay-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(4,4,4,0.88);
+  backdrop-filter: blur(12px) saturate(0.3);
+  -webkit-backdrop-filter: blur(12px) saturate(0.3);
+  cursor: pointer;
+}
+
+.overlay-ui {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  height: 100%;
+}
+
+/* Back button */
+.overlay-back {
+  padding: 22px 36px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  pointer-events: all;
+}
+.back-line {
+  width: 32px; height: 1px; background: var(--text-mid);
+  transition: width 0.3s var(--ease-out);
+}
+.overlay-back:hover .back-line { width: 48px; }
+.back-label {
+  font-size: 9px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--text-mid);
+}
+
+/* Design title */
+.overlay-title {
+  padding: 0 36px 4px;
+  font-family: var(--serif);
+  font-size: clamp(28px, 5vw, 48px);
+  font-weight: 300; letter-spacing: 0.06em;
+}
+.overlay-title em { font-style: italic; opacity: 0.6; }
+.overlay-attrs {
+  padding: 0 36px 32px;
+  font-size: 9px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--text-dim);
+  display: flex; gap: 0;
+}
+.overlay-attrs span + span::before { content: ' · '; opacity: 0.4; }
+
+/* DECK */
+.deck-area {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.deck-with-nav {
+  display: flex; align-items: center; gap: 28px;
+}
+
+.deck-wrap {
+  position: relative;
+  width: min(44vw, 220px);
+  height: min(66vw, 330px);
+}
+
+.pose-card {
+  position: absolute;
+  width: min(38vw, 190px);
+  height: min(57vw, 285px);
+  left: 50%; top: 50%;
+  overflow: hidden;
+  will-change: transform, opacity;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.pose-card .pc-bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+}
+.pose-card .pc-vignette {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 45%);
+}
+.pose-card .pc-label {
+  position: absolute; bottom: 12px; left: 12px;
+  font-size: 9px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+}
+
+/* Nav arrows */
+.deck-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  user-select: none; flex-shrink: 0;
+  font-size: 14px; color: var(--text-mid);
+}
+.deck-arrow:hover { border-color: rgba(255,255,255,0.3); color: var(--text); }
+.deck-arrow:active { transform: scale(0.9); }
+
+/* Pose dots */
+.pose-dots-row {
+  display: flex; justify-content: center; gap: 8px;
+  padding: 20px 0 0;
+}
+.overlay-dots-wrap {
+  display: flex; flex-direction: column; align-items: center;
+}
+
+/* CTA */
+.overlay-cta {
+  padding: 20px 36px 36px;
+  display: flex; gap: 12px;
+}
+.cta-primary {
+  flex: 1; padding: 14px 20px;
+  background: var(--text); color: var(--bg);
+  border: none; font-family: var(--sans); font-weight: 300;
+  font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+  cursor: pointer; transition: opacity 0.2s;
+}
+.cta-primary:hover { opacity: 0.85; }
+.cta-secondary {
+  padding: 14px 20px;
+  background: transparent; color: var(--text-mid);
+  border: 1px solid var(--border); font-family: var(--sans); font-weight: 300;
+  font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+  cursor: pointer; transition: border-color 0.2s, color 0.2s;
+}
+.cta-secondary:hover { border-color: rgba(255,255,255,0.3); color: var(--text); }
+
+/* ════════════════════════════════════════
+   MOBILE
+════════════════════════════════════════ */
+@media (max-width: 640px) {
+  nav { padding: 18px 20px; }
+  .nav-links { display: none; }
+  .section-head { padding: 90px 20px 32px; flex-direction: column; gap: 12px; align-items: flex-start; }
+  .carousel-track { padding: 8px 20px 24px; gap: 10px; }
+  .design-card { flex: 0 0 70vw; }
+  .carousel-controls { padding: 0 20px; }
+  .overlay-back { padding: 18px 20px; }
+  .overlay-title { padding: 0 20px 4px; }
+  .overlay-attrs { padding: 0 20px 24px; }
+  .overlay-cta { padding: 16px 20px 28px; }
+  .deck-with-nav { gap: 16px; }
+  .deck-wrap { width: 55vw; height: calc(55vw * 1.5); }
+  .pose-card { width: 48vw; height: calc(48vw * 1.5); }
+  .deck-arrow { width: 34px; height: 34px; font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Caiena</div>
+  <div class="nav-links">
+    <span>Catálogo</span>
+    <span>Reservar</span>
+    <span>Prueba Virtual</span>
+  </div>
+</nav>
+
+<!-- SECTION HEADER -->
+<div class="section-head">
+  <div class="section-head-left">
+    <div class="eyebrow">Temporada 2026</div>
+    <h2>Diseños<br><em>de Uñas</em></h2>
+  </div>
+  <div class="section-count" id="designCount"></div>
+</div>
+
+<!-- CAROUSEL -->
+<div class="carousel-outer">
+  <div class="carousel-track" id="carouselTrack"></div>
+</div>
+
+<div class="carousel-controls">
+  <div class="carousel-dots" id="carouselDots"></div>
+  <div class="scroll-hint">Desliza para explorar →</div>
+</div>
+
+<!-- OVERLAY: DECK DE POSES -->
+<div class="overlay" id="overlay">
+  <div class="overlay-backdrop" id="overlayBackdrop"></div>
+
+  <div class="overlay-ui">
+    <div class="overlay-back" id="overlayBack">
+      <div class="back-line"></div>
+      <span class="back-label">Todos los diseños</span>
+    </div>
+
+    <div class="overlay-title" id="overlayTitle"></div>
+    <div class="overlay-attrs" id="overlayAttrs"></div>
+
+    <div class="deck-area">
+      <div class="overlay-dots-wrap">
+        <div class="deck-with-nav">
+          <div class="deck-arrow" id="deckPrev">←</div>
+          <div class="deck-wrap" id="deckWrap"></div>
+          <div class="deck-arrow" id="deckNext">→</div>
+        </div>
+        <div class="pose-dots-row" id="poseDots"></div>
+      </div>
+    </div>
+
+    <div class="overlay-cta">
+      <button class="cta-secondary">Guardar diseño</button>
+      <button class="cta-primary">Agendar cita →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DESIGNS = [
+  {
+    name: 'French Nude', italic: false,
+    attrs: ['Nude', 'Almendra', 'Glossy', 'French'],
+    bg: 'linear-gradient(145deg, #3a2418 10%, #0e0705 90%)',
+    badge: null
+  },
+  {
+    name: 'Estrellas', italic: false,
+    attrs: ['Blanco', 'Almendra', 'Nail Art'],
+    bg: 'linear-gradient(160deg, #1a2e18 10%, #060c06 90%)',
+    badge: 'Nuevo'
+  },
+  {
+    name: 'Rosa Sutil', italic: false,
+    attrs: ['Rosa', 'Oval', 'Satinado', 'Sólido'],
+    bg: 'linear-gradient(145deg, #2e1422 10%, #0c0609 90%)',
+    badge: null
+  },
+  {
+    name: 'Rojo Mate', italic: false,
+    attrs: ['Rojo', 'Cuadrada', 'Matte', 'Sólido'],
+    bg: 'linear-gradient(145deg, #2e0c0c 10%, #0c0505 90%)',
+    badge: 'Popular'
+  },
+  {
+    name: 'Ombré Nude', italic: false,
+    attrs: ['Nude', 'Almendra', 'Chrome', 'Ombré'],
+    bg: 'linear-gradient(155deg, #18182e 10%, #070710 90%)',
+    badge: null
+  },
+  {
+    name: 'Dorado', italic: false,
+    attrs: ['Dorado', 'Stiletto', 'Glitter'],
+    bg: 'linear-gradient(145deg, #26200a 10%, #0e0c05 90%)',
+    badge: 'Temporada'
+  },
+];
+
+const POSES = [
+  { label: 'Garra',      bg: 'linear-gradient(150deg,#2a1a0e,#080503)' },
+  { label: 'Ascendente', bg: 'linear-gradient(150deg,#0e1e14,#040805)' },
+  { label: 'Doble',      bg: 'linear-gradient(150deg,#0e0e22,#040409)' },
+  { label: 'Rocío',      bg: 'linear-gradient(150deg,#1e1c0a,#080804)' },
+];
+
+// ─── Build carousel ────────────────────────────────────────────
+const track = document.getElementById('carouselTrack');
+const dotsEl = document.getElementById('carouselDots');
+document.getElementById('designCount').textContent = DESIGNS.length + ' diseños';
+
+DESIGNS.forEach((d, idx) => {
+  const card = document.createElement('div');
+  card.className = 'design-card';
+  card.innerHTML = `
+    <div class="card-image-wrap">
+      <div class="card-bg" style="background:${d.bg}"></div>
+      <div class="card-vignette"></div>
+      <div class="card-poses">
+        ${POSES.map((_,pi) => `<div class="pose-pip${pi===0?' active':''}"></div>`).join('')}
+      </div>
+      ${d.badge ? `<div class="card-badge">${d.badge}</div>` : ''}
+      <div class="card-info-over">
+        <div class="card-name-over">${d.name}</div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <div class="card-attrs">
+        ${d.attrs.map(a=>`<span>${a}</span>`).join('')}
+      </div>
+      <span class="card-arrow">→</span>
+    </div>`;
+  card.addEventListener('click', () => openOverlay(idx));
+  track.appendChild(card);
+
+  const dot = document.createElement('div');
+  dot.className = 'carousel-dot' + (idx === 0 ? ' active' : '');
+  dot.addEventListener('click', () => {
+    track.scrollTo({ left: card.offsetLeft - 40, behavior: 'smooth' });
+  });
+  dotsEl.appendChild(dot);
+});
+
+// Update dots on scroll
+let scrollTimer;
+track.addEventListener('scroll', () => {
+  clearTimeout(scrollTimer);
+  scrollTimer = setTimeout(() => {
+    const idx = Math.round(track.scrollLeft / (track.scrollWidth / DESIGNS.length));
+    document.querySelectorAll('.carousel-dot').forEach((d,i) => {
+      d.classList.toggle('active', i === idx);
+    });
+  }, 50);
+});
+
+// ─── Pose deck ─────────────────────────────────────────────────
+let poseIdx = 0;
+let isAnim = false;
+
+function relPos(i) {
+  const n = POSES.length;
+  let d = ((i - poseIdx) % n + n) % n;
+  if (d > n/2) d -= n;
+  return d;
+}
+
+function buildDeck() {
+  const wrap = document.getElementById('deckWrap');
+  wrap.innerHTML = '';
+  const n = POSES.length;
+
+  const order = [...Array(n).keys()].sort((a,b) => Math.abs(relPos(b)) - Math.abs(relPos(a)));
+  order.forEach(i => {
+    const rel = relPos(i);
+    const card = document.createElement('div');
+    card.className = 'pose-card';
+    card.dataset.i = i;
+
+    const tx = -50 + rel * 11;
+    const ty = -50 + Math.abs(rel) * 10;
+    const rot = rel * 5;
+    const scale = 1 - Math.abs(rel) * 0.1;
+    const opacity = 1 - Math.abs(rel) * 0.28;
+
+    card.style.cssText = `
+      transform: translate(${tx}%,${ty}%) rotate(${rot}deg) scale(${scale});
+      opacity:${opacity}; z-index:${n - Math.abs(rel)}; transition:none;`;
+
+    // Mix design + pose color
+    const design = DESIGNS[activeDesign];
+    const pose = POSES[i];
+    card.innerHTML = `
+      <div class="pc-bg" style="background:${design.bg}"></div>
+      <div class="pc-vignette"></div>
+      <div class="pc-label">${pose.label}</div>`;
+    wrap.appendChild(card);
+  });
+
+  // Dots
+  const dots = document.getElementById('poseDots');
+  dots.innerHTML = '';
+  POSES.forEach((_,i) => {
+    const d = document.createElement('div');
+    d.className = 'carousel-dot' + (i === poseIdx ? ' active' : '');
+    d.addEventListener('click', () => moveDeck(i - poseIdx));
+    dots.appendChild(d);
+  });
+}
+
+function moveDeck(dir) {
+  if (isAnim || dir === 0) return;
+  isAnim = true;
+  const n = POSES.length;
+
+  document.querySelectorAll('.pose-card').forEach(card => {
+    const i = parseInt(card.dataset.i);
+    let r = relPos(i) - dir;
+    if (r > n/2) r -= n; if (r < -n/2) r += n;
+
+    const tx = -50 + r*11, ty = -50 + Math.abs(r)*10;
+    const rot = r*5, scale = 1 - Math.abs(r)*0.1, opacity = 1 - Math.abs(r)*0.28;
+
+    card.style.transition = 'transform 0.52s cubic-bezier(0.34,1.15,0.64,1), opacity 0.4s ease';
+    card.style.transform = `translate(${tx}%,${ty}%) rotate(${rot}deg) scale(${scale})`;
+    card.style.opacity = opacity;
+    card.style.zIndex = n - Math.abs(r);
+  });
+
+  setTimeout(() => {
+    poseIdx = ((poseIdx + dir) % n + n) % n;
+    isAnim = false;
+    buildDeck();
+  }, 530);
+}
+
+// ─── Open / Close overlay ──────────────────────────────────────
+let activeDesign = 0;
+
+function openOverlay(idx) {
+  activeDesign = idx;
+  poseIdx = 0;
+  const d = DESIGNS[idx];
+  document.getElementById('overlayTitle').innerHTML =
+    d.italic ? `<em>${d.name}</em>` : d.name;
+  document.getElementById('overlayAttrs').innerHTML =
+    d.attrs.map(a => `<span>${a}</span>`).join('');
+  buildDeck();
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeOverlay() {
+  document.getElementById('overlay').classList.remove('open');
+}
+
+document.getElementById('overlayBackdrop').addEventListener('click', closeOverlay);
+document.getElementById('overlayBack').addEventListener('click', closeOverlay);
+document.getElementById('deckNext').addEventListener('click', () => moveDeck(1));
+document.getElementById('deckPrev').addEventListener('click', () => moveDeck(-1));
+
+// ─── Swipe on deck ─────────────────────────────────────────────
+let sx = 0, sy = 0;
+document.getElementById('deckWrap').addEventListener('touchstart', e => {
+  sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+}, { passive: true });
+document.getElementById('deckWrap').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - sx;
+  const dy = e.changedTouches[0].clientY - sy;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 36) moveDeck(dx < 0 ? 1 : -1);
+}, { passive: true });
+
+// ─── Keyboard ──────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (document.getElementById('overlay').classList.contains('open')) {
+    if (e.key === 'ArrowRight') moveDeck(1);
+    if (e.key === 'ArrowLeft') moveDeck(-1);
+    if (e.key === 'Escape') closeOverlay();
+  }
+});
+</script>
+</body>
+</html>

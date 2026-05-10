@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caiena Beauty Nails</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════════════════
+   DARK MODE TOKENS — reserved for future dark mode toggle
+   --bg:#050505  --text:#f2efe9  --rose:#B76E79 on black
+   activate via: html[data-theme="dark"]
+════════════════════════════════════════════════════════ */
+
+:root {
+  --bg:          #FEF9F7;
+  --bg2:         #F7EDE8;
+  --bg-card:     #FFFFFF;
+  --text:        #1F1214;
+  --text-mid:    rgba(31,18,20,.52);
+  --text-dim:    rgba(31,18,20,.30);
+  --rose:        #C98B8B;
+  --rose-dark:   #B76E79;
+  --plum:        #3A1020;
+  --champagne:   #E8D5C4;
+  --border:      rgba(180,110,110,.13);
+  --border-mid:  rgba(180,110,110,.30);
+  --serif:       'Cormorant Garamond', Georgia, serif;
+  --sans:        'Jost', 'Helvetica Neue', sans-serif;
+  --silk:        cubic-bezier(.22,1,.36,1);
+  --spring:      cubic-bezier(.34,1.3,.64,1);
+  --card-w:      clamp(150px,24vw,285px);
+  --gap:         clamp(10px,1.4vw,18px);
+  --pad:         clamp(20px,5vw,56px);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:300;min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* ─── CURSOR ───────────────────────────────────────── */
+@media(pointer:fine){
+  body{cursor:none}
+  #cur{position:fixed;inset:auto auto auto auto;top:0;left:0;z-index:9999;width:7px;height:7px;border-radius:50%;background:var(--plum);pointer-events:none;transform:translate(-50%,-50%);transition:width .3s var(--silk),height .3s var(--silk),border .3s,background .3s;will-change:transform}
+  #cur.h{width:36px;height:36px;background:transparent;border:1px solid var(--rose-dark)}
+  #cur.c{width:5px;height:5px}
+}
+#cur{display:none}
+@media(pointer:fine){#cur{display:block}}
+
+/* ════════════════════════════════════════════════════
+   NAV
+════════════════════════════════════════════════════ */
+nav{
+  position:fixed;inset:0 0 auto 0;z-index:400;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px var(--pad);
+  background:rgba(254,249,247,.94);
+  backdrop-filter:blur(16px) saturate(1.8);
+  -webkit-backdrop-filter:blur(16px) saturate(1.8);
+  border-bottom:1px solid var(--border);
+}
+
+/* LOGO — real image */
+.nav-logo{
+  height:38px;display:flex;align-items:center;
+}
+.nav-logo img{
+  height:100%;width:auto;object-fit:contain;
+  /* Logo already has plum+rose colors — works on light bg */
+}
+
+.nav-links{
+  display:flex;gap:28px;
+  font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--text-mid);
+}
+.nav-links a{
+  color:inherit;text-decoration:none;cursor:pointer;transition:color .2s;
+  position:relative;
+}
+.nav-links a::after{
+  content:'';position:absolute;bottom:-2px;left:0;width:0;height:1px;
+  background:var(--rose-dark);transition:width .35s var(--silk);
+}
+.nav-links a:hover{color:var(--plum)}
+.nav-links a:hover::after{width:100%}
+
+.nav-cta{
+  padding:9px 20px;border:1px solid var(--border-mid);
+  font-size:9px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--plum);background:transparent;cursor:pointer;
+  transition:background .2s,border-color .2s;
+}
+.nav-cta:hover{background:rgba(183,110,121,.08);border-color:var(--rose-dark)}
+
+@media(max-width:600px){.nav-links{display:none}}
+@media(max-width:400px){.nav-cta{display:none}}
+
+/* ════════════════════════════════════════════════════
+   HERO
+════════════════════════════════════════════════════ */
+.hero{
+  min-height:100dvh;
+  display:grid;grid-template-columns:1fr 1fr;
+  align-items:center;
+  padding:80px var(--pad) 60px;
+  gap:40px;
+  position:relative;overflow:hidden;
+}
+
+/* Subtle background texture */
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 70% 50%, rgba(232,213,196,.35) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 20% 80%, rgba(201,139,139,.12) 0%, transparent 60%);
+  pointer-events:none;
+}
+
+/* Left: text */
+.hero-text{position:relative;z-index:1}
+.hero-eyebrow{
+  display:flex;align-items:center;gap:12px;
+  font-size:9px;letter-spacing:.42em;text-transform:uppercase;
+  color:var(--rose-dark);margin-bottom:20px;
+  animation:fadeUp .8s var(--silk) .2s both;
+}
+.hero-eyebrow::before{content:'';width:28px;height:1px;background:var(--rose)}
+
+.hero-title{
+  font-family:var(--serif);
+  font-size:clamp(38px,6vw,80px);
+  font-weight:300;line-height:1.0;letter-spacing:.02em;
+  color:var(--plum);
+  animation:fadeUp .9s var(--silk) .35s both;
+}
+.hero-title em{font-style:italic;color:var(--rose-dark)}
+
+.hero-sub{
+  font-size:clamp(13px,1.4vw,16px);font-weight:300;
+  color:var(--text-mid);line-height:1.7;
+  max-width:380px;margin-top:20px;
+  animation:fadeUp .9s var(--silk) .5s both;
+}
+
+.hero-actions{
+  display:flex;gap:14px;margin-top:36px;flex-wrap:wrap;
+  animation:fadeUp .9s var(--silk) .65s both;
+}
+.btn-primary{
+  padding:14px 32px;background:var(--plum);color:#fff;border:none;
+  font-family:var(--sans);font-weight:300;
+  font-size:9px;letter-spacing:.24em;text-transform:uppercase;cursor:pointer;
+  transition:opacity .2s;position:relative;overflow:hidden;
+}
+.btn-primary::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent 40%,rgba(201,139,139,.25));
+  opacity:0;transition:opacity .3s;
+}
+.btn-primary:hover::after{opacity:1}
+.btn-ghost{
+  padding:14px 32px;background:transparent;color:var(--rose-dark);
+  border:1px solid var(--border-mid);
+  font-family:var(--sans);font-weight:300;
+  font-size:9px;letter-spacing:.24em;text-transform:uppercase;cursor:pointer;
+  transition:border-color .2s,background .2s;
+}
+.btn-ghost:hover{border-color:var(--rose-dark);background:rgba(183,110,121,.06)}
+
+/* Right: NAIL ANIMATION */
+.hero-visual{
+  position:relative;z-index:1;
+  display:flex;justify-content:center;align-items:center;
+  animation:fadeUp .9s var(--silk) .1s both;
+}
+
+/* ── NAIL PAINT ANIMATION ──────────────────────────── */
+.nails-scene{
+  position:relative;
+  width:clamp(240px,36vw,420px);
+  height:clamp(300px,44vw,520px);
+}
+
+/* 5 nails arranged like a fanned hand */
+.nail{
+  position:absolute;bottom:0;
+  display:flex;flex-direction:column;align-items:center;
+  transform-origin:bottom center;
+}
+
+/* Nail shape container */
+.nail-shape{
+  position:relative;
+  overflow:hidden;
+  border-radius:50% 50% 30% 30% / 60% 60% 40% 40%;
+  box-shadow:0 2px 12px rgba(58,16,32,.12);
+  border:1px solid rgba(58,16,32,.08);
+}
+
+/* The liquid fill — rises from bottom */
+.nail-fill{
+  position:absolute;inset:0;
+  transform:translateY(100%);
+  animation:liquidRise 1.2s var(--spring) both;
+}
+
+/* Wave on top of liquid */
+.nail-wave{
+  position:absolute;top:-4px;left:-10%;width:120%;height:12px;
+  border-radius:50%;
+  animation:wave 2s ease-in-out infinite;
+}
+
+/* Nail shine (always visible) */
+.nail-shine{
+  position:absolute;top:14%;left:20%;
+  width:22%;height:35%;
+  background:linear-gradient(160deg,rgba(255,255,255,.65),transparent);
+  border-radius:50%;
+  transform:rotate(-15deg);
+  z-index:3;
+}
+
+/* Polish drip from top — echo of the logo ornament */
+.nail-drip{
+  width:3px;
+  background:linear-gradient(to bottom, currentColor, transparent);
+  border-radius:0 0 3px 3px;
+  position:absolute;
+  top:0;left:50%;
+  transform:translateX(-50%);
+  transform-origin:top center;
+  animation:drip 1.4s var(--spring) both;
+}
+.nail-drip::after{
+  content:'';position:absolute;bottom:-6px;left:50%;
+  transform:translateX(-50%);
+  width:8px;height:8px;border-radius:50%;
+  background:currentColor;
+  animation:dripDot .4s var(--spring) both;
+}
+
+/* Cuticle / base of nail */
+.nail-base{
+  width:100%;height:14px;
+  background:linear-gradient(to bottom,rgba(232,213,196,.6),transparent);
+  border-radius:0 0 50% 50%;
+  position:relative;z-index:2;margin-top:-1px;
+}
+
+/* LAYOUT OF 5 NAILS */
+.nail:nth-child(1){ /* pinky */
+  left:2%;
+  transform:rotate(-22deg) translateY(-10%);
+}
+.nail:nth-child(2){ /* ring */
+  left:18%;
+  transform:rotate(-10deg) translateY(-4%);
+}
+.nail:nth-child(3){ /* middle */
+  left:38%;
+  transform:rotate(0deg) translateY(0%);
+}
+.nail:nth-child(4){ /* index */
+  left:57%;
+  transform:rotate(10deg) translateY(-4%);
+}
+.nail:nth-child(5){ /* thumb — shorter, wider */
+  left:76%;
+  transform:rotate(22deg) translateY(-12%);
+}
+
+.nail-shape{
+  width: clamp(36px,6vw,58px);
+  height:clamp(52px,9vw,86px);
+}
+/* thumb is wider/shorter */
+.nail:nth-child(5) .nail-shape{
+  width:clamp(44px,7vw,68px);
+  height:clamp(42px,7vw,68px);
+}
+/* pinky slightly smaller */
+.nail:nth-child(1) .nail-shape{
+  width:clamp(30px,5vw,48px);
+  height:clamp(44px,7.5vw,72px);
+}
+
+/* Each nail has different color + delay */
+.nail:nth-child(1) .nail-fill{ background:var(--champagne); animation-delay:.1s; }
+.nail:nth-child(1) .nail-wave{ background:var(--champagne); animation-delay:.1s; }
+.nail:nth-child(1) .nail-drip{ color:var(--champagne); animation-delay:1.1s; }
+.nail:nth-child(1) .nail-drip::after{ animation-delay:1.3s; }
+
+.nail:nth-child(2) .nail-fill{ background:var(--rose); animation-delay:.3s; }
+.nail:nth-child(2) .nail-wave{ background:var(--rose); animation-delay:.3s; }
+.nail:nth-child(2) .nail-drip{ color:var(--rose); animation-delay:1.3s; }
+.nail:nth-child(2) .nail-drip::after{ animation-delay:1.5s; }
+
+.nail:nth-child(3) .nail-fill{ background:var(--plum); animation-delay:.55s; }
+.nail:nth-child(3) .nail-wave{ background:var(--plum); animation-delay:.55s; }
+.nail:nth-child(3) .nail-drip{ color:var(--plum); animation-delay:1.55s; }
+.nail:nth-child(3) .nail-drip::after{ animation-delay:1.75s; }
+
+.nail:nth-child(4) .nail-fill{ background:var(--rose-dark); animation-delay:.8s; }
+.nail:nth-child(4) .nail-wave{ background:var(--rose-dark); animation-delay:.8s; }
+.nail:nth-child(4) .nail-drip{ color:var(--rose-dark); animation-delay:1.8s; }
+.nail:nth-child(4) .nail-drip::after{ animation-delay:2s; }
+
+.nail:nth-child(5) .nail-fill{ background:var(--champagne); animation-delay:1.0s; }
+.nail:nth-child(5) .nail-wave{ background:var(--champagne); animation-delay:1.0s; }
+.nail:nth-child(5) .nail-drip{ color:var(--champagne); animation-delay:2.0s; }
+.nail:nth-child(5) .nail-drip::after{ animation-delay:2.2s; }
+
+/* ── KEYFRAMES ─────────────────────────────────────── */
+@keyframes liquidRise{
+  from{transform:translateY(100%)}
+  to{transform:translateY(0%)}
+}
+@keyframes wave{
+  0%,100%{transform:translateX(0) scaleY(1)}
+  50%{transform:translateX(-6%) scaleY(1.4)}
+}
+@keyframes drip{
+  from{height:0;opacity:0}
+  to{height:clamp(16px,3vw,28px);opacity:1}
+}
+@keyframes dripDot{
+  from{transform:translateX(-50%) scale(0)}
+  to{transform:translateX(-50%) scale(1)}
+}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(24px)}
+  to{opacity:1;transform:none}
+}
+
+/* Floating drop (logo motif echo) */
+.hero-drop{
+  position:absolute;top:10%;right:8%;
+  width:clamp(18px,3vw,28px);
+  height:clamp(22px,3.5vw,34px);
+  opacity:0;
+  animation:dropFloat 1s var(--spring) 2.4s both;
+}
+@keyframes dropFloat{
+  from{opacity:0;transform:translateY(-12px) scale(0.6)}
+  to{opacity:1;transform:none}
+}
+
+/* Horizontal rule decoration */
+.hero-rule{
+  position:absolute;bottom:36px;left:var(--pad);right:var(--pad);
+  display:flex;align-items:center;gap:16px;
+  font-size:8px;letter-spacing:.32em;text-transform:uppercase;color:var(--text-dim);
+  animation:fadeUp .8s var(--silk) 1.2s both;
+}
+.hero-rule::before,.hero-rule::after{
+  content:'';flex:1;height:1px;background:var(--border);
+}
+
+@media(max-width:700px){
+  .hero{grid-template-columns:1fr;padding-top:100px;text-align:center}
+  .hero-eyebrow{justify-content:center}
+  .hero-sub{margin-left:auto;margin-right:auto}
+  .hero-actions{justify-content:center}
+  .hero-visual{order:-1;height:clamp(200px,55vw,300px)}
+  .nails-scene{
+    width:clamp(200px,80vw,320px);
+    height:clamp(220px,60vw,280px);
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   DIVIDER
+════════════════════════════════════════════════════ */
+.section-divider{
+  display:flex;align-items:center;gap:20px;
+  padding:0 var(--pad) 0;
+  margin-bottom:32px;
+}
+.section-divider::before,.section-divider::after{
+  content:'';flex:1;height:1px;background:var(--border);
+}
+.section-divider span{
+  font-size:9px;letter-spacing:.38em;text-transform:uppercase;color:var(--rose-dark);
+  white-space:nowrap;
+}
+
+/* ════════════════════════════════════════════════════
+   CATALOG SECTION
+════════════════════════════════════════════════════ */
+.catalog-section{padding:60px 0 0}
+.catalog-head{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 var(--pad) clamp(24px,4vw,40px);
+  flex-wrap:wrap;gap:12px;
+}
+.catalog-eyebrow{
+  font-size:9px;letter-spacing:.40em;text-transform:uppercase;
+  color:var(--rose-dark);margin-bottom:10px;
+  display:flex;align-items:center;gap:10px;
+}
+.catalog-eyebrow::before{content:'';width:24px;height:1px;background:var(--rose)}
+.catalog-head h2{
+  font-family:var(--serif);
+  font-size:clamp(30px,5vw,58px);
+  font-weight:300;line-height:1.05;letter-spacing:.03em;color:var(--plum);
+}
+.catalog-head h2 em{font-style:italic;color:var(--rose-dark)}
+.design-count{
+  font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--text-dim);
+  border-left:1px solid var(--border-mid);padding-left:14px;align-self:flex-end;
+}
+
+/* ─── Track ───────────────────────────────────────── */
+.carousel-outer{
+  mask-image:linear-gradient(to right,transparent 0,black clamp(20px,5vw,56px),black calc(100% - clamp(20px,5vw,56px)),transparent 100%);
+  -webkit-mask-image:linear-gradient(to right,transparent 0,black clamp(20px,5vw,56px),black calc(100% - clamp(20px,5vw,56px)),transparent 100%);
+}
+.carousel-track{
+  display:flex;gap:var(--gap);
+  padding:10px var(--pad) 28px;
+  overflow-x:auto;scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.carousel-track::-webkit-scrollbar{display:none}
+
+/* ─── Card ────────────────────────────────────────── */
+.design-card{
+  flex:0 0 var(--card-w);
+  scroll-snap-align:center;cursor:pointer;
+  display:flex;flex-direction:column;
+  animation:fadeUp .8s var(--silk) both;
+}
+.card-img{
+  aspect-ratio:2/3;overflow:hidden;position:relative;
+  background:var(--bg2);
+  box-shadow:0 2px 20px rgba(58,16,32,.07);
+}
+.card-bg{
+  position:absolute;inset:0;
+  transition:transform 1.1s var(--silk);
+}
+.design-card:hover .card-bg{transform:scale(1.05)}
+.card-vig{
+  position:absolute;inset:0;z-index:1;
+  background:linear-gradient(to top,rgba(58,16,32,.72) 0%,rgba(58,16,32,.06) 45%,transparent 70%);
+}
+.card-pips{position:absolute;top:12px;left:12px;z-index:2;display:flex;gap:4px}
+.pip{width:14px;height:2px;border-radius:1px;background:rgba(255,255,255,.25);transition:all .3s}
+.pip.on{background:rgba(255,255,255,.9);width:20px}
+.card-badge{
+  position:absolute;top:12px;right:12px;z-index:2;
+  font-size:7px;letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(255,255,255,.70);border:1px solid rgba(255,255,255,.22);padding:3px 7px;
+}
+.card-name{
+  position:absolute;bottom:14px;left:14px;right:14px;z-index:2;
+  font-family:var(--serif);font-size:clamp(15px,2vw,20px);
+  font-weight:300;letter-spacing:.05em;line-height:1.15;color:#fff;
+}
+.card-foot{
+  display:flex;align-items:baseline;justify-content:space-between;
+  padding:11px 2px 0;border-top:1px solid var(--border);
+}
+.card-attrs{
+  font-size:8px;letter-spacing:.20em;text-transform:uppercase;
+  color:var(--text-dim);display:flex;flex-wrap:wrap;
+}
+.card-attrs span+span::before{content:' · '}
+.card-chevron{font-size:11px;color:var(--rose);transition:transform .35s var(--silk),color .2s}
+.design-card:hover .card-chevron{transform:translateX(5px);color:var(--rose-dark)}
+
+/* ─── Controls ────────────────────────────────────── */
+.controls-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 var(--pad) 60px;
+}
+.pdots{display:flex;gap:7px;align-items:center}
+.pdot{height:1px;border-radius:1px;background:rgba(180,110,110,.22);cursor:pointer;transition:all .35s var(--silk);width:18px}
+.pdot.active{background:var(--rose-dark);width:34px}
+.ctrl-right{display:flex;align-items:center;gap:14px}
+.ctrl-lbl{font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--text-dim)}
+@media(max-width:540px){.ctrl-lbl{display:none}}
+.pause-btn{
+  width:34px;height:34px;border-radius:50%;border:1px solid var(--border-mid);
+  background:transparent;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text-mid);font-size:10px;
+  transition:border-color .2s,color .2s,background .2s;
+}
+.pause-btn:hover{border-color:var(--rose-dark);color:var(--rose-dark);background:rgba(183,110,121,.06)}
+
+/* ════════════════════════════════════════════════════
+   OVERLAY
+════════════════════════════════════════════════════ */
+.overlay{
+  position:fixed;inset:0;z-index:500;
+  display:grid;place-items:center;
+  opacity:0;pointer-events:none;transition:opacity .45s ease;
+}
+.overlay.open{opacity:1;pointer-events:all}
+.ov-bg{
+  position:absolute;inset:0;
+  background:rgba(254,249,247,.84);
+  backdrop-filter:blur(22px) saturate(1.5);
+  -webkit-backdrop-filter:blur(22px) saturate(1.5);
+  cursor:pointer;
+}
+.ov-panel{
+  position:relative;z-index:1;
+  width:min(92vw,500px);max-height:94dvh;
+  display:flex;flex-direction:column;
+  background:var(--bg-card);
+  border:1px solid var(--border-mid);
+  box-shadow:0 28px 80px rgba(58,16,32,.13),0 4px 16px rgba(58,16,32,.06);
+  transform:translateY(32px) scale(.97);
+  transition:transform .52s var(--spring);
+  padding:26px;
+}
+.overlay.open .ov-panel{transform:none}
+.ov-panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(to right,var(--champagne),var(--rose),var(--champagne));
+}
+.ov-head{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);
+}
+.ov-back{display:flex;align-items:center;gap:9px;cursor:pointer;padding:3px 0}
+.ov-back-line{width:24px;height:1px;background:var(--rose);transition:width .3s var(--silk)}
+.ov-back:hover .ov-back-line{width:38px}
+.ov-back-lbl{font-size:8px;letter-spacing:.28em;text-transform:uppercase;color:var(--rose-dark)}
+.ov-title{font-family:var(--serif);font-size:clamp(20px,4vw,36px);font-weight:300;letter-spacing:.05em;color:var(--plum)}
+.ov-attrs{font-size:8px;letter-spacing:.26em;text-transform:uppercase;color:var(--text-dim);margin-top:5px;display:flex;flex-wrap:wrap}
+.ov-attrs span+span::before{content:' · '}
+.ov-deck-row{display:flex;align-items:center;justify-content:center;gap:clamp(12px,3vw,22px);flex:1;min-height:0;padding:6px 0}
+.deck-stage{position:relative;width:clamp(110px,24vw,180px);height:clamp(165px,36vw,270px);flex-shrink:0}
+.pcard{
+  position:absolute;
+  width:clamp(96px,20vw,156px);height:clamp(144px,30vw,234px);
+  left:50%;top:50%;overflow:hidden;
+  border:1px solid rgba(58,16,32,.12);
+  box-shadow:0 4px 22px rgba(58,16,32,.08);
+  will-change:transform,opacity;
+}
+.pcard-bg{position:absolute;inset:0}
+.pcard-vig{position:absolute;inset:0;background:linear-gradient(to top,rgba(58,16,32,.65) 0%,transparent 50%)}
+.pcard-lbl{position:absolute;bottom:9px;left:10px;font-size:7px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.da{
+  width:clamp(30px,5vw,38px);height:clamp(30px,5vw,38px);
+  border:1px solid var(--border-mid);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;font-size:12px;color:var(--rose-dark);
+  transition:border-color .2s,background .2s,transform .15s;user-select:none;
+}
+.da:hover{border-color:var(--rose-dark);background:rgba(183,110,121,.06)}
+.da:active{transform:scale(.88)}
+.ov-pdots{display:flex;gap:6px;justify-content:center;padding-top:12px}
+.ov-pdot{height:1px;border-radius:1px;background:rgba(180,110,110,.22);cursor:pointer;transition:all .3s;width:16px}
+.ov-pdot.active{background:var(--rose-dark);width:28px}
+.ov-cta{display:flex;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
+.btn-ol{flex:1;padding:13px;background:transparent;color:var(--text-mid);border:1px solid var(--border-mid);font-family:var(--sans);font-weight:300;font-size:8px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;transition:border-color .2s,color .2s}
+.btn-ol:hover{border-color:var(--rose-dark);color:var(--rose-dark)}
+.btn-sl{flex:2;padding:13px;background:var(--plum);color:#fff;border:none;font-family:var(--sans);font-weight:300;font-size:8px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;position:relative;overflow:hidden;transition:opacity .2s}
+.btn-sl::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 40%,rgba(201,139,139,.25));opacity:0;transition:opacity .3s}
+.btn-sl:hover::after{opacity:1}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+
+<!-- ── NAV ────────────────────────────────────────── -->
+<nav>
+  <div class="nav-logo">
+    <!-- Logo inline SVG recreation matching palette exactly -->
+    <svg height="38" viewBox="0 0 320 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- "Caiena" in Cormorant-style serif paths approximated as text -->
+      <text x="4" y="56"
+        font-family="'Cormorant Garamond', Georgia, serif"
+        font-size="58" font-weight="300" font-style="italic"
+        fill="#3A1020" letter-spacing="-1">Caiena</text>
+      <!-- Nail drop ornament above the C -->
+      <ellipse cx="24" cy="6" rx="4" ry="5.5" fill="#B76E79"/>
+      <ellipse cx="32" cy="3" rx="3" ry="4" fill="#B76E79"/>
+      <circle cx="28" cy="10" r="2.5" fill="#B76E79"/>
+      <!-- BEAUTY NAILS -->
+      <text x="36" y="74"
+        font-family="'Jost', 'Helvetica Neue', sans-serif"
+        font-size="11" font-weight="300"
+        fill="#B76E79" letter-spacing="6">BEAUTY NAILS</text>
+    </svg>
+  </div>
+
+  <div class="nav-links">
+    <a>Catálogo</a>
+    <a>Try-On IA</a>
+    <a>Reservar</a>
+  </div>
+  <button class="nav-cta">Agendar →</button>
+</nav>
+
+<!-- ── HERO ───────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-text">
+    <div class="hero-eyebrow">Caiena Beauty · Leander TX</div>
+    <h1 class="hero-title">Arte en<br>cada <em>uña.</em></h1>
+    <p class="hero-sub">Diseños de catálogo premium aplicados con precisión artesanal. Elige tu diseño, agenda tu cita.</p>
+    <div class="hero-actions">
+      <button class="btn-primary">Ver catálogo</button>
+      <button class="btn-ghost">Prueba virtual IA</button>
+    </div>
+  </div>
+
+  <!-- NAIL PAINT ANIMATION -->
+  <div class="hero-visual">
+    <div class="nails-scene">
+
+      <!-- Pinky -->
+      <div class="nail">
+        <div class="nail-shape">
+          <div class="nail-fill"></div>
+          <div class="nail-wave"></div>
+          <div class="nail-shine"></div>
+        </div>
+        <div class="nail-drip" style="height:0"></div>
+        <div class="nail-base"></div>
+      </div>
+
+      <!-- Ring -->
+      <div class="nail">
+        <div class="nail-shape">
+          <div class="nail-fill"></div>
+          <div class="nail-wave"></div>
+          <div class="nail-shine"></div>
+        </div>
+        <div class="nail-drip" style="height:0"></div>
+        <div class="nail-base"></div>
+      </div>
+
+      <!-- Middle -->
+      <div class="nail">
+        <div class="nail-shape">
+          <div class="nail-fill"></div>
+          <div class="nail-wave"></div>
+          <div class="nail-shine"></div>
+        </div>
+        <div class="nail-drip" style="height:0"></div>
+        <div class="nail-base"></div>
+      </div>
+
+      <!-- Index -->
+      <div class="nail">
+        <div class="nail-shape">
+          <div class="nail-fill"></div>
+          <div class="nail-wave"></div>
+          <div class="nail-shine"></div>
+        </div>
+        <div class="nail-drip" style="height:0"></div>
+        <div class="nail-base"></div>
+      </div>
+
+      <!-- Thumb -->
+      <div class="nail">
+        <div class="nail-shape">
+          <div class="nail-fill"></div>
+          <div class="nail-wave"></div>
+          <div class="nail-shine"></div>
+        </div>
+        <div class="nail-drip" style="height:0"></div>
+        <div class="nail-base"></div>
+      </div>
+
+      <!-- Floating logo-motif drop -->
+      <svg class="hero-drop" viewBox="0 0 28 34" fill="none">
+        <path d="M14 2 C14 2 4 14 4 20 C4 26.6 8.5 32 14 32 C19.5 32 24 26.6 24 20 C24 14 14 2 14 2Z" fill="#B76E79" opacity=".7"/>
+        <ellipse cx="10" cy="5" rx="4" ry="5" fill="#C98B8B" opacity=".5"/>
+        <ellipse cx="20" cy="2" rx="3" ry="3.5" fill="#E8D5C4" opacity=".6"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="hero-rule">
+    <span>Scroll para explorar</span>
+  </div>
+</section>
+
+<!-- ── CATALOG SECTION ────────────────────────────── -->
+<section class="catalog-section">
+  <div class="section-divider"><span>Colección 2026</span></div>
+
+  <div class="catalog-head">
+    <div>
+      <div class="catalog-eyebrow">Nuestros diseños</div>
+      <h2>Diseños<br><em>de Uñas</em></h2>
+    </div>
+    <div class="design-count" id="designCount"></div>
+  </div>
+
+  <div class="carousel-outer">
+    <div class="carousel-track" id="carouselTrack"></div>
+  </div>
+
+  <div class="controls-bar">
+    <div class="pdots" id="pdots"></div>
+    <div class="ctrl-right">
+      <span class="ctrl-lbl" id="ctrlLbl">Reproduciendo</span>
+      <button class="pause-btn" id="pauseBtn">⏸</button>
+    </div>
+  </div>
+</section>
+
+<!-- ── OVERLAY ────────────────────────────────────── -->
+<div class="overlay" id="overlay">
+  <div class="ov-bg" id="ovBg"></div>
+  <div class="ov-panel">
+    <div class="ov-head">
+      <div class="ov-back" id="ovBack">
+        <div class="ov-back-line"></div>
+        <span class="ov-back-lbl">Todos los diseños</span>
+      </div>
+      <div>
+        <div class="ov-title" id="ovTitle"></div>
+        <div class="ov-attrs" id="ovAttrs"></div>
+      </div>
+    </div>
+    <div class="ov-deck-row">
+      <div class="da" id="dkPrev">←</div>
+      <div>
+        <div class="deck-stage" id="deckStage"></div>
+        <div class="ov-pdots" id="poseDots"></div>
+      </div>
+      <div class="da" id="dkNext">→</div>
+    </div>
+    <div class="ov-cta">
+      <button class="btn-ol">Guardar</button>
+      <button class="btn-sl">Agendar mi cita →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── DATA ──────────────────────────── */
+const D=[
+  {name:'French Nude', attrs:['Nude','Almendra','Glossy','French'], bg:'linear-gradient(145deg,#8c6858,#3a2418)', badge:null},
+  {name:'Estrellas',   attrs:['Blanco','Nail Art'],                  bg:'linear-gradient(145deg,#5a7a68,#2a3c2e)', badge:'Nuevo'},
+  {name:'Rosa Sutil',  attrs:['Rosa','Oval','Satinado'],             bg:'linear-gradient(145deg,#a06878,#4a2030)', badge:null},
+  {name:'Rojo Mate',   attrs:['Rojo','Cuadrada','Matte'],            bg:'linear-gradient(145deg,#8c2828,#3c1010)', badge:'Popular'},
+  {name:'Ombré Nude',  attrs:['Nude','Chrome','Ombré'],              bg:'linear-gradient(155deg,#5a5878,#20202e)', badge:null},
+  {name:'Dorado Glam', attrs:['Dorado','Stiletto','Glitter'],        bg:'linear-gradient(145deg,#8c7840,#3a2c10)', badge:'Temporada'},
+];
+const P=[
+  {label:'Garra',      bg:'linear-gradient(148deg,#7a4838,#2e1810)'},
+  {label:'Ascendente', bg:'linear-gradient(148deg,#485e4a,#182018)'},
+  {label:'Doble',      bg:'linear-gradient(148deg,#484868,#181828)'},
+  {label:'Rocío',      bg:'linear-gradient(148deg,#6a6030,#2a2808)'},
+];
+
+/* ── CAROUSEL ──────────────────────── */
+const track=document.getElementById('carouselTrack');
+const dotsEl=document.getElementById('pdots');
+document.getElementById('designCount').textContent=D.length+' diseños';
+
+D.forEach((d,i)=>{
+  const c=document.createElement('div'); c.className='design-card';
+  c.style.animationDelay=`${.05+i*.07}s`;
+  c.innerHTML=`<div class="card-img">
+    <div class="card-bg" style="background:${d.bg}"></div>
+    <div class="card-vig"></div>
+    <div class="card-pips">${P.map((_,pi)=>`<div class="pip${pi===0?' on':''}"></div>`).join('')}</div>
+    ${d.badge?`<div class="card-badge">${d.badge}</div>`:''}
+    <div class="card-name">${d.name}</div>
+  </div>
+  <div class="card-foot">
+    <div class="card-attrs">${d.attrs.map(a=>`<span>${a}</span>`).join('')}</div>
+    <span class="card-chevron">→</span>
+  </div>`;
+  c.addEventListener('click',()=>openOv(i));
+  track.appendChild(c);
+  const dot=document.createElement('div');
+  dot.className='pdot'+(i===0?' active':'');
+  dot.addEventListener('click',()=>{const cc=track.children[i];track.scrollTo({left:cc.offsetLeft-parseInt(getComputedStyle(track).paddingLeft),behavior:'smooth'});});
+  dotsEl.appendChild(dot);
+});
+
+/* Auto-scroll */
+let playing=true,raf,lastTs=null;
+const SPEED=38;
+function loop(ts){
+  if(!playing)return;
+  if(lastTs!==null){
+    const dt=(ts-lastTs)/1000,max=track.scrollWidth-track.clientWidth;
+    track.scrollLeft+=SPEED*dt;
+    if(track.scrollLeft>=max-1){track.style.scrollBehavior='auto';track.scrollLeft=0;track.style.scrollBehavior='';}
+  }
+  lastTs=ts; raf=requestAnimationFrame(loop);
+}
+raf=requestAnimationFrame(loop);
+const pauseScroll=()=>{lastTs=null;cancelAnimationFrame(raf);};
+const resumeScroll=()=>{if(playing){lastTs=null;raf=requestAnimationFrame(loop);}};
+track.addEventListener('pointerenter',pauseScroll);
+track.addEventListener('pointerleave',resumeScroll);
+track.addEventListener('touchstart',pauseScroll,{passive:true});
+track.addEventListener('touchend',()=>{if(playing)setTimeout(resumeScroll,1800);},{passive:true});
+const pb=document.getElementById('pauseBtn');
+pb.addEventListener('click',()=>{
+  playing=!playing;pb.textContent=playing?'⏸':'▶';
+  document.getElementById('ctrlLbl').textContent=playing?'Reproduciendo':'En pausa';
+  playing?resumeScroll():pauseScroll();
+});
+track.addEventListener('scroll',()=>{
+  const pct=track.scrollLeft/(track.scrollWidth-track.clientWidth);
+  const idx=Math.round(pct*(D.length-1));
+  document.querySelectorAll('.pdot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+},{passive:true});
+
+/* ── DECK ──────────────────────────── */
+let pi=0,da=false,ad=0;
+function r(i){const n=P.length;let d=((i-pi)%n+n)%n;if(d>n/2)d-=n;return d;}
+function buildDeck(){
+  const st=document.getElementById('deckStage');st.innerHTML='';
+  const n=P.length;
+  [...Array(n).keys()].sort((a,b)=>Math.abs(r(b))-Math.abs(r(a))).forEach(i=>{
+    const rv=r(i);
+    const card=document.createElement('div');card.className='pcard';card.dataset.i=i;
+    const tx=-50+rv*13,ty=-50+Math.abs(rv)*10;
+    card.style.cssText=`transform:translate(${tx}%,${ty}%) rotate(${rv*5}deg) scale(${1-Math.abs(rv)*.1});opacity:${1-Math.abs(rv)*.28};z-index:${n-Math.abs(rv)};transition:none;`;
+    card.innerHTML=`<div class="pcard-bg" style="background:${D[ad].bg}"></div><div class="pcard-vig"></div><div class="pcard-lbl">${P[i].label}</div>`;
+    st.appendChild(card);
+  });
+  const pd=document.getElementById('poseDots');pd.innerHTML='';
+  P.forEach((_,i)=>{const d=document.createElement('div');d.className='ov-pdot'+(i===pi?' active':'');d.addEventListener('click',()=>mv(i-pi));pd.appendChild(d);});
+}
+function mv(dir){
+  if(da||!dir)return;da=true;const n=P.length;
+  document.querySelectorAll('.pcard').forEach(card=>{
+    const i=parseInt(card.dataset.i);let rv=r(i)-dir;
+    if(rv>n/2)rv-=n;if(rv<-n/2)rv+=n;
+    card.style.transition='transform .52s cubic-bezier(.34,1.15,.64,1),opacity .4s ease';
+    card.style.transform=`translate(${-50+rv*13}%,${-50+Math.abs(rv)*10}%) rotate(${rv*5}deg) scale(${1-Math.abs(rv)*.1})`;
+    card.style.opacity=1-Math.abs(rv)*.28;card.style.zIndex=n-Math.abs(rv);
+  });
+  setTimeout(()=>{pi=((pi+dir)%P.length+P.length)%P.length;da=false;buildDeck();},530);
+}
+
+/* ── OVERLAY ───────────────────────── */
+function openOv(idx){
+  ad=idx;pi=0;const d=D[idx];
+  document.getElementById('ovTitle').textContent=d.name;
+  document.getElementById('ovAttrs').innerHTML=d.attrs.map(a=>`<span>${a}</span>`).join('');
+  buildDeck();document.getElementById('overlay').classList.add('open');
+  pauseScroll();
+}
+function closeOv(){document.getElementById('overlay').classList.remove('open');resumeScroll();}
+document.getElementById('ovBg').addEventListener('click',closeOv);
+document.getElementById('ovBack').addEventListener('click',closeOv);
+document.getElementById('dkNext').addEventListener('click',()=>mv(1));
+document.getElementById('dkPrev').addEventListener('click',()=>mv(-1));
+let sx=0,sy=0;
+document.getElementById('deckStage').addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
+document.getElementById('deckStage').addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+  if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>34)mv(dx<0?1:-1);
+},{passive:true});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')closeOv();
+  if(e.key==='ArrowRight')mv(1);
+  if(e.key==='ArrowLeft')mv(-1);
+});
+
+/* ── CURSOR ────────────────────────── */
+const cur=document.getElementById('cur');
+if(cur&&window.matchMedia('(pointer:fine)').matches){
+  let cx=0,cy=0,mx=0,my=0;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+  (function l(){cx+=(mx-cx)*.13;cy+=(my-cy)*.13;cur.style.transform=`translate(calc(${cx}px - 50%),calc(${cy}px - 50%))`;requestAnimationFrame(l);})();
+  document.querySelectorAll('button,.design-card,.da,.ov-back,.ov-bg,.pdot,.ov-pdot')
+    .forEach(el=>{el.addEventListener('mouseenter',()=>cur.classList.add('h'));el.addEventListener('mouseleave',()=>cur.classList.remove('h'));});
+  document.addEventListener('mousedown',()=>cur.classList.add('c'));
+  document.addEventListener('mouseup',()=>cur.classList.remove('c'));
+}
+</script>
+</body>
+</html>

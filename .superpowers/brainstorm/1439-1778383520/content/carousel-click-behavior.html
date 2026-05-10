@@ -1,0 +1,77 @@
+<h2>Al hacer clic en un diseño — ¿cómo se muestran las 4 variantes?</h2>
+<p class="subtitle">Las 4 variantes son: garra · ascendente · doble · rocío</p>
+
+<div class="options" style="grid-template-columns:1fr;gap:16px;margin-top:24px">
+
+  <div class="option" data-choice="modal" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Modal / Lightbox</h3>
+      <div style="display:flex;gap:12px;margin-top:10px">
+        <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:6px;padding:8px;text-align:center;font-size:12px;opacity:0.8">
+          <div style="height:60px;background:rgba(255,255,255,0.1);border-radius:4px;margin-bottom:6px"></div>
+          Garra
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:6px;padding:8px;text-align:center;font-size:12px;opacity:0.8">
+          <div style="height:60px;background:rgba(255,255,255,0.1);border-radius:4px;margin-bottom:6px"></div>
+          Ascendente
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:6px;padding:8px;text-align:center;font-size:12px;opacity:0.8">
+          <div style="height:60px;background:rgba(255,255,255,0.1);border-radius:4px;margin-bottom:6px"></div>
+          Doble
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,0.06);border-radius:6px;padding:8px;text-align:center;font-size:12px;opacity:0.8">
+          <div style="height:60px;background:rgba(255,255,255,0.1);border-radius:4px;margin-bottom:6px"></div>
+          Rocío
+        </div>
+      </div>
+      <p style="margin-top:8px;font-size:13px;opacity:0.7">Fondo oscurecido, las 4 en horizontal o 2×2. Botón "Quiero este diseño" al fondo. Toda la pantalla dedicada al diseño.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="drawer" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Panel lateral (drawer)</h3>
+      <div style="display:flex;gap:12px;margin-top:10px;align-items:flex-start">
+        <div style="flex:2;background:rgba(255,255,255,0.04);border-radius:6px;padding:8px;min-height:80px">
+          <div style="display:flex;gap:6px;overflow:hidden">
+            <div style="min-width:50px;height:70px;background:rgba(255,255,255,0.1);border-radius:4px"></div>
+            <div style="min-width:50px;height:70px;background:rgba(255,255,255,0.08);border-radius:4px"></div>
+            <div style="min-width:50px;height:70px;background:rgba(255,255,255,0.06);border-radius:4px"></div>
+          </div>
+          <p style="font-size:11px;opacity:0.5;margin-top:4px">Carrusel (fondo)</p>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,0.08);border-radius:6px;padding:10px;border-left:2px solid rgba(255,255,255,0.2)">
+          <p style="font-size:11px;font-weight:600;margin-bottom:6px">French Nude</p>
+          <div style="height:40px;background:rgba(255,255,255,0.1);border-radius:4px;margin-bottom:4px"></div>
+          <div style="height:40px;background:rgba(255,255,255,0.08);border-radius:4px;margin-bottom:4px"></div>
+          <p style="font-size:10px;opacity:0.5">Panel lateral →</p>
+        </div>
+      </div>
+      <p style="margin-top:8px;font-size:13px;opacity:0.7">Se desliza desde la derecha. El carrusel queda visible detrás. Más contextual, menos disruptivo.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="inline" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Expansión inline (acordeón)</h3>
+      <div style="margin-top:10px;background:rgba(255,255,255,0.04);border-radius:6px;padding:10px">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <div style="width:40px;height:55px;background:rgba(255,255,255,0.08);border-radius:4px"></div>
+          <div style="width:40px;height:55px;background:rgba(255,255,255,0.15);border-radius:4px;outline:2px solid rgba(255,255,255,0.4)"></div>
+          <div style="width:40px;height:55px;background:rgba(255,255,255,0.08);border-radius:4px"></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.06);border-radius:6px;padding:8px;display:flex;gap:8px">
+          <div style="flex:1;height:50px;background:rgba(255,255,255,0.1);border-radius:4px"></div>
+          <div style="flex:1;height:50px;background:rgba(255,255,255,0.1);border-radius:4px"></div>
+          <div style="flex:1;height:50px;background:rgba(255,255,255,0.1);border-radius:4px"></div>
+          <div style="flex:1;height:50px;background:rgba(255,255,255,0.1);border-radius:4px"></div>
+        </div>
+      </div>
+      <p style="margin-top:8px;font-size:13px;opacity:0.7">El carrusel se pausa y debajo del card seleccionado se despliegan las 4 variantes. Sin salir de la sección.</p>
+    </div>
+  </div>
+
+</div>

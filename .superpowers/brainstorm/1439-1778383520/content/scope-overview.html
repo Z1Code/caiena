@@ -1,0 +1,74 @@
+<h2>Catálogo Caiena Nails — Alcance del Sistema</h2>
+<p class="subtitle">Son 4 subsistemas interconectados. ¿Los construimos en orden o tienes prioridades?</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px">
+
+  <div class="option" data-choice="pipeline" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>Pipeline de Generación</h3>
+      <p><strong>Script:</strong> procesa las ~20 fotos que empiezan con "37" → aplica las 4 bases maestras → 80 imágenes de catálogo</p>
+      <p><strong>DB:</strong> tabla <code>catalogImages</code> que rastrea qué diseños ya se procesaron, evitando duplicados</p>
+      <p><strong>Clasificación IA:</strong> Gemini analiza cada diseño y extrae color, forma, acabado, tipo (french, sólido, arte…)</p>
+      <p><strong>Resultado:</strong> cada diseño se convierte en un artículo con metadata completo en la BD</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="carousel" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Carrusel de Catálogo</h3>
+      <p><strong>Landing page:</strong> scroll horizontal lento, muestra 1 card por diseño (thumbnail)</p>
+      <p><strong>Click:</strong> expande las 4 variantes del diseño (garra, ascendente, doble, rocío) en un modal/panel</p>
+      <p><strong>Igual en dashboard:</strong> la usuaria selecciona el diseño que quiere para su cita</p>
+      <p><strong>Diseño seleccionado</strong> queda guardado en el perfil / reserva</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="admin" onclick="toggleSelect(this)">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>Panel Admin — Nuevos Modelos</h3>
+      <p><strong>Admin sube foto</strong> de un diseño de uñas (Instagram, Pinterest, etc.)</p>
+      <p><strong>Pipeline automático:</strong> Gemini genera las 4 variantes, clasifica, guarda en BD</p>
+      <p><strong>Admin revisa/edita</strong> metadata antes de publicar</p>
+      <p><strong>Resultado:</strong> nuevo artículo disponible en catálogo</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="booking" onclick="toggleSelect(this)">
+    <div class="letter">4</div>
+    <div class="content">
+      <h3>Diseño → Cita</h3>
+      <p><strong>Usuaria selecciona diseño</strong> en el carrusel (landing o dashboard)</p>
+      <p><strong>Si no está logueada:</strong> redirect a Google login → vuelve al carrusel</p>
+      <p><strong>En dashboard:</strong> el diseño elegido aparece adjunto a la nueva cita</p>
+      <p><strong>Confirmación WhatsApp:</strong> incluye imagen del diseño en el mensaje</p>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:32px;padding:16px;border:1px solid rgba(255,255,255,0.15);border-radius:8px;background:rgba(255,255,255,0.04)">
+  <p class="label">Dependencias</p>
+  <p style="margin:8px 0">1 → 2 → 3 → 4 (cada uno depende del anterior)</p>
+  <p style="font-size:13px;opacity:0.7">El pipeline (1) produce las imágenes que muestra el carrusel (2). El admin (3) usa el mismo pipeline (1). El diseño-cita (4) necesita el carrusel (2).</p>
+</div>
+
+<div class="options" data-multiselect style="margin-top:24px">
+  <p class="label" style="margin-bottom:8px">¿Empezamos todos juntos o en orden? (selecciona)</p>
+  <div class="option" data-choice="orden" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>En orden (recomendado)</h3>
+      <p>Terminamos el pipeline + BD primero, luego UI, luego admin, luego booking. Más sólido.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="paralelo" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Todo de una</h3>
+      <p>Diseñamos todo el spec completo ahora y lo implementamos de corrido. Más arriesgado pero más rápido de planear.</p>
+    </div>
+  </div>
+</div>

@@ -10,6 +10,7 @@ import { AdminScheduleTab } from "./admin-schedule-tab";
 import { AdminGroupsTab } from "./admin-groups-tab";
 import { AdminServicesTab } from "./admin-services-tab";
 import { AdminUsersTab } from "./admin-users-tab";
+import { AdminNailStylesTab } from "./admin-nail-styles-tab";
 
 interface Booking {
   id: string;
@@ -34,7 +35,7 @@ interface Stats {
 }
 
 type ViewMode = "today" | "week";
-type AdminTab = "reservas" | "staff" | "horarios" | "grupos" | "servicios" | "usuarios";
+type AdminTab = "reservas" | "staff" | "horarios" | "grupos" | "servicios" | "disenos" | "usuarios";
 
 interface AdminDashboardProps {
   canManageUsers?: boolean;
@@ -134,8 +135,8 @@ export function AdminDashboard({ canManageUsers = false }: AdminDashboardProps) 
       {/* Tab navigation */}
       <div className="border-b border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-1">
-          {(["reservas", "staff", "horarios", "grupos", "servicios", ...(canManageUsers ? ["usuarios"] : [])] as AdminTab[]).map((tab) => {
-            const labels: Record<AdminTab, string> = { reservas: "Reservas", staff: "Empleadas", horarios: "Horarios", grupos: "Grupos", servicios: "Servicios", usuarios: "Usuarios" };
+          {(["reservas", "staff", "horarios", "grupos", "servicios", "disenos", ...(canManageUsers ? ["usuarios"] : [])] as AdminTab[]).map((tab) => {
+            const labels: Record<AdminTab, string> = { reservas: "Reservas", staff: "Empleadas", horarios: "Horarios", grupos: "Grupos", servicios: "Servicios", disenos: "Diseños", usuarios: "Usuarios" };
             return (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? "border-accent text-accent-dark" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
@@ -149,6 +150,7 @@ export function AdminDashboard({ canManageUsers = false }: AdminDashboardProps) 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Non-reservas tabs */}
         {activeTab === "servicios" && <AdminServicesTab />}
+        {activeTab === "disenos" && <AdminNailStylesTab />}
         {activeTab === "usuarios" && canManageUsers && <AdminUsersTab />}
         {activeTab === "staff" && <AdminStaffTab />}
         {activeTab === "horarios" && <AdminScheduleTab />}

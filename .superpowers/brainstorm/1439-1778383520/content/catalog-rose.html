@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caiena — Catálogo Rosa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+
+/* ════════════════════════════════════════════════════════════════
+   DARK MODE — guardado para uso futuro
+   Aplicar con: <html data-theme="dark">
+   Palette: editorial luxury black, rim lighting, Dior Vernis
+   Background: #050505  Surface: #0d0d0d  Text: #f2efe9
+   Accent: #B76E79 (rose gold sobre negro)
+   Border: rgba(255,255,255,0.07)
+   Uso: toggle automático con prefers-color-scheme o botón de modo oscuro
+════════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════════
+   TOKENS — MODO CLARO (luz natural, rosa francés, lujo editorial)
+   Inspiración: French Apothecary × Rose Maison
+   Anchoring deep: plum burgundy  #3A1020
+   Brand rose:     muted rosé     #C98B8B  (40% sat — NO hot pink)
+   Rose gold:      #B76E79        (Cartier, Charlotte Tilbury signal)
+════════════════════════════════════════════════════════════════ */
+:root {
+  /* Fondos */
+  --bg:           #FEF9F7;        /* blanco cálido, casi piel */
+  --bg-2:         #F7EDE8;        /* blush cream para secciones */
+  --bg-card:      #FFFFFF;
+
+  /* Texto */
+  --text:         #1F1214;        /* near-black con undertone plum */
+  --text-mid:     rgba(31,18,20,0.55);
+  --text-dim:     rgba(31,18,20,0.32);
+
+  /* Marca */
+  --rose:         #C98B8B;        /* muted rosé — accent principal */
+  --rose-dark:    #B76E79;        /* rose gold — CTAs, highlights */
+  --plum:         #3A1020;        /* anchor oscuro — tipografía display */
+  --champagne:    #E8D5C4;        /* tono neutro cálido */
+
+  /* UI */
+  --border:       rgba(180,110,110,0.12);
+  --border-mid:   rgba(180,110,110,0.28);
+  --surface:      rgba(249,237,232,0.70);
+
+  /* Fuentes */
+  --serif:        'Cormorant Garamond', 'Didot', Georgia, serif;
+  --sans:         'Jost', 'Helvetica Neue', Arial, sans-serif;
+
+  /* Easing */
+  --ease-silk:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring:  cubic-bezier(0.34, 1.3, 0.64, 1);
+
+  /* Layout */
+  --card-w:       clamp(155px, 25vw, 290px);
+  --gap:          clamp(10px, 1.4vw, 18px);
+  --side-pad:     clamp(20px, 5vw, 56px);
+}
+
+/* ─── Reset ─────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box; margin: 0; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--sans); font-weight: 300;
+  min-height: 100dvh; overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CURSOR CUSTOM (desktop)
+════════════════════════════════════════════════════════════════ */
+@media (pointer: fine) {
+  body { cursor: none; }
+  #cursor {
+    position: fixed; top: 0; left: 0; z-index: 9999;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--plum); pointer-events: none;
+    transform: translate(-50%,-50%);
+    transition: width .3s var(--ease-silk), height .3s var(--ease-silk),
+                background .3s, border .3s;
+    will-change: transform;
+  }
+  #cursor.h {
+    width: 38px; height: 38px; background: transparent;
+    border: 1px solid var(--rose-dark);
+  }
+  #cursor.c { width: 5px; height: 5px; }
+}
+#cursor { display: none; }
+@media (pointer: fine) { #cursor { display: block; } }
+
+/* ════════════════════════════════════════════════════════════════
+   NAV
+════════════════════════════════════════════════════════════════ */
+nav {
+  position: fixed; inset: 0 0 auto 0; z-index: 300;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px var(--side-pad);
+  background: linear-gradient(to bottom, rgba(254,249,247,0.98) 60%, transparent 100%);
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  font-family: var(--serif); font-size: 19px; font-weight: 300;
+  letter-spacing: 0.24em; text-transform: uppercase; font-style: italic;
+  color: var(--plum);
+}
+.nav-links {
+  display: flex; gap: 32px;
+  font-size: 9px; letter-spacing: 0.26em; text-transform: uppercase;
+  color: var(--text-mid);
+}
+.nav-links a {
+  color: inherit; text-decoration: none; cursor: pointer;
+  transition: color .2s;
+  position: relative;
+}
+.nav-links a::after {
+  content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 1px;
+  background: var(--rose-dark); transition: width .3s var(--ease-silk);
+}
+.nav-links a:hover { color: var(--plum); }
+.nav-links a:hover::after { width: 100%; }
+
+@media (max-width: 540px) { .nav-links { display: none; } }
+
+/* ════════════════════════════════════════════════════════════════
+   SECTION HEAD
+════════════════════════════════════════════════════════════════ */
+.section-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: clamp(88px, 14vw, 116px) var(--side-pad) clamp(24px, 4vw, 40px);
+  flex-wrap: wrap; gap: 12px;
+}
+.eyebrow {
+  font-size: 9px; letter-spacing: 0.40em; text-transform: uppercase;
+  color: var(--rose-dark); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.eyebrow::before {
+  content: ''; display: block; width: 24px; height: 1px; background: var(--rose);
+}
+.section-head h1 {
+  font-family: var(--serif);
+  font-size: clamp(34px, 6vw, 66px);
+  font-weight: 300; line-height: 1.02; letter-spacing: 0.03em;
+  color: var(--plum);
+}
+.section-head h1 em {
+  font-style: italic; color: var(--rose-dark);
+}
+.design-count {
+  font-size: 9px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--text-dim); align-self: flex-end;
+  border-left: 1px solid var(--border-mid); padding-left: 14px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CAROUSEL
+════════════════════════════════════════════════════════════════ */
+.carousel-outer {
+  position: relative;
+  mask-image: linear-gradient(to right,
+    transparent 0, black clamp(20px,5vw,56px),
+    black calc(100% - clamp(20px,5vw,56px)), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right,
+    transparent 0, black clamp(20px,5vw,56px),
+    black calc(100% - clamp(20px,5vw,56px)), transparent 100%);
+}
+.carousel-track {
+  display: flex; gap: var(--gap);
+  padding: 10px var(--side-pad) 28px;
+  overflow-x: auto; scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  will-change: scroll-position;
+}
+.carousel-track::-webkit-scrollbar { display: none; }
+
+/* ── CARD ─────────────────────────────────────────────────── */
+.design-card {
+  flex: 0 0 var(--card-w);
+  scroll-snap-align: center;
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  animation: cardIn .8s var(--ease-silk) both;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.card-img {
+  aspect-ratio: 2/3;
+  overflow: hidden; position: relative;
+  background: var(--bg-2);
+  box-shadow: 0 2px 20px rgba(58,16,32,0.06);
+}
+
+.card-bg {
+  position: absolute; inset: 0;
+  transition: transform 1.1s var(--ease-silk);
+  will-change: transform;
+}
+.design-card:hover .card-bg { transform: scale(1.05); }
+
+/* Vignette rosada, no negra */
+.card-vig {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(
+    to top,
+    rgba(58,16,32,0.72) 0%,
+    rgba(58,16,32,0.08) 45%,
+    transparent 70%
+  );
+}
+
+/* Pips */
+.card-pips {
+  position: absolute; top: 12px; left: 12px; z-index: 2;
+  display: flex; gap: 4px;
+}
+.pip { width: 14px; height: 2px; border-radius: 1px; background: rgba(255,255,255,0.25); transition: all .3s; }
+.pip.on { background: rgba(255,255,255,0.90); width: 20px; }
+
+/* Badge */
+.card-badge {
+  position: absolute; top: 12px; right: 12px; z-index: 2;
+  font-size: 7px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: rgba(255,255,255,0.70);
+  border: 1px solid rgba(255,255,255,0.22); padding: 3px 7px; line-height: 1;
+}
+
+/* Name on card */
+.card-name {
+  position: absolute; bottom: 14px; left: 14px; right: 14px; z-index: 2;
+  font-family: var(--serif); font-size: clamp(15px, 2vw, 20px);
+  font-weight: 300; letter-spacing: 0.05em; line-height: 1.15;
+  color: #fff;
+}
+
+/* Footer */
+.card-foot {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 11px 2px 0;
+  border-top: 1px solid var(--border);
+}
+.card-attrs {
+  font-size: 8px; letter-spacing: 0.20em; text-transform: uppercase;
+  color: var(--text-dim); display: flex; flex-wrap: wrap; gap: 0;
+}
+.card-attrs span + span::before { content: ' · '; }
+.card-chevron {
+  font-size: 11px; color: var(--rose);
+  transition: transform .35s var(--ease-silk), color .2s;
+}
+.design-card:hover .card-chevron { transform: translateX(5px); color: var(--rose-dark); }
+
+/* ════════════════════════════════════════════════════════════════
+   CONTROLS BAR
+════════════════════════════════════════════════════════════════ */
+.controls-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--side-pad) clamp(32px, 5vw, 56px);
+}
+.progress-dots { display: flex; gap: 7px; align-items: center; }
+.pdot {
+  height: 1px; border-radius: 1px;
+  background: rgba(180,110,110,0.22);
+  cursor: pointer; transition: all .35s var(--ease-silk); width: 18px;
+}
+.pdot.active { background: var(--rose-dark); width: 34px; }
+
+.controls-right { display: flex; align-items: center; gap: 14px; }
+.scroll-label {
+  font-size: 8px; letter-spacing: 0.26em; text-transform: uppercase;
+  color: var(--text-dim);
+}
+@media (max-width: 540px) { .scroll-label { display: none; } }
+
+.pause-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--border-mid); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-mid); font-size: 10px;
+  transition: border-color .2s, color .2s, background .2s;
+}
+.pause-btn:hover { border-color: var(--rose-dark); color: var(--rose-dark); background: rgba(183,110,121,0.06); }
+
+/* ════════════════════════════════════════════════════════════════
+   OVERLAY
+════════════════════════════════════════════════════════════════ */
+.overlay {
+  position: fixed; inset: 0; z-index: 400;
+  display: grid; place-items: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .45s ease;
+}
+.overlay.open { opacity: 1; pointer-events: all; }
+
+.ov-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(254,249,247,0.82);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  cursor: pointer;
+}
+
+/* Panel */
+.ov-panel {
+  position: relative; z-index: 1;
+  width: min(92vw, 520px);
+  max-height: 94dvh;
+  display: flex; flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border-mid);
+  box-shadow: 0 24px 80px rgba(58,16,32,0.12), 0 4px 16px rgba(58,16,32,0.06);
+  transform: translateY(36px) scale(0.97);
+  transition: transform .52s var(--ease-spring);
+  padding: 28px;
+}
+.overlay.open .ov-panel { transform: none; }
+
+/* Thin rose top border */
+.ov-panel::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(to right, var(--champagne), var(--rose), var(--champagne));
+}
+
+.ov-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ov-back {
+  display: flex; align-items: center; gap: 9px; cursor: pointer; padding: 3px 0;
+}
+.ov-back-line {
+  width: 24px; height: 1px; background: var(--rose);
+  transition: width .3s var(--ease-silk);
+}
+.ov-back:hover .ov-back-line { width: 38px; }
+.ov-back-label {
+  font-size: 8px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--rose-dark);
+}
+
+.ov-title-wrap {}
+.ov-title {
+  font-family: var(--serif); font-size: clamp(22px, 4.5vw, 38px);
+  font-weight: 300; letter-spacing: 0.05em; color: var(--plum);
+}
+.ov-attrs {
+  font-size: 8px; letter-spacing: 0.26em; text-transform: uppercase;
+  color: var(--text-dim); margin-top: 5px; display: flex; flex-wrap: wrap;
+}
+.ov-attrs span + span::before { content: ' · '; }
+
+/* Deck */
+.ov-deck-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: clamp(12px, 3vw, 24px); flex: 1; min-height: 0; padding: 8px 0;
+}
+
+.deck-stage {
+  position: relative;
+  width: clamp(120px, 26vw, 190px);
+  height: clamp(180px, 39vw, 285px);
+  flex-shrink: 0;
+}
+
+.pcard {
+  position: absolute;
+  width: clamp(104px, 22vw, 165px);
+  height: clamp(156px, 33vw, 248px);
+  left: 50%; top: 50%;
+  overflow: hidden;
+  border: 1px solid rgba(58,16,32,0.12);
+  box-shadow: 0 4px 24px rgba(58,16,32,0.08);
+  will-change: transform, opacity;
+}
+.pcard-bg { position: absolute; inset: 0; }
+.pcard-vig { position: absolute; inset: 0; background: linear-gradient(to top, rgba(58,16,32,0.65) 0%, transparent 50%); }
+.pcard-lbl {
+  position: absolute; bottom: 9px; left: 10px;
+  font-size: 7px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+}
+
+.deck-arrow {
+  width: clamp(32px, 5vw, 40px); height: clamp(32px, 5vw, 40px);
+  border: 1px solid var(--border-mid);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; font-size: 12px; color: var(--rose-dark);
+  transition: border-color .2s, background .2s, transform .15s;
+  user-select: none;
+}
+.deck-arrow:hover { border-color: var(--rose-dark); background: rgba(183,110,121,0.06); }
+.deck-arrow:active { transform: scale(0.88); }
+
+.ov-pose-dots { display: flex; gap: 6px; justify-content: center; padding-top: 14px; }
+.ov-pdot { height: 1px; border-radius: 1px; background: rgba(180,110,110,0.22); cursor: pointer; transition: all .3s; width: 16px; }
+.ov-pdot.active { background: var(--rose-dark); width: 30px; }
+
+/* CTA */
+.ov-cta {
+  display: flex; gap: 10px; margin-top: 20px;
+  padding-top: 18px; border-top: 1px solid var(--border);
+}
+.btn-outline {
+  flex: 1; padding: 13px;
+  background: transparent; color: var(--text-mid);
+  border: 1px solid var(--border-mid);
+  font-family: var(--sans); font-weight: 300;
+  font-size: 8px; letter-spacing: 0.22em; text-transform: uppercase;
+  cursor: pointer; transition: border-color .2s, color .2s;
+}
+.btn-outline:hover { border-color: var(--rose-dark); color: var(--rose-dark); }
+
+.btn-solid {
+  flex: 2; padding: 13px;
+  background: var(--plum); color: #fff;
+  border: none;
+  font-family: var(--sans); font-weight: 300;
+  font-size: 8px; letter-spacing: 0.22em; text-transform: uppercase;
+  cursor: pointer; position: relative; overflow: hidden;
+  transition: background .3s;
+}
+.btn-solid::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, transparent 30%, rgba(201,139,139,0.25) 100%);
+  opacity: 0; transition: opacity .3s;
+}
+.btn-solid:hover::after { opacity: 1; }
+
+/* ════════════════════════════════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════════════════════════════════ */
+@media (max-width: 540px) {
+  :root { --card-w: 68vw; --side-pad: 20px; }
+  .ov-panel { padding: 20px; }
+}
+@media (min-width: 1200px) { :root { --card-w: 20vw; } }
+
+/* ─── Palette preview (bottom-right debug) ───────────────── */
+.palette-swatch {
+  position: fixed; bottom: 16px; right: 16px; z-index: 500;
+  display: flex; gap: 5px; align-items: center;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid var(--border-mid);
+  padding: 7px 10px; font-size: 8px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim);
+}
+.sw { width: 14px; height: 14px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+
+<!-- Nav -->
+<nav>
+  <div class="logo">Caiena</div>
+  <div class="nav-links">
+    <a>Catálogo</a><a>Reservar</a><a>Try-On</a>
+  </div>
+</nav>
+
+<!-- Header -->
+<div class="section-head">
+  <div>
+    <div class="eyebrow">Colección 2026</div>
+    <h1>Diseños<br><em>de Uñas</em></h1>
+  </div>
+  <div class="design-count" id="designCount"></div>
+</div>
+
+<!-- Carousel -->
+<div class="carousel-outer">
+  <div class="carousel-track" id="carouselTrack"></div>
+</div>
+
+<!-- Controls -->
+<div class="controls-bar">
+  <div class="progress-dots" id="progressDots"></div>
+  <div class="controls-right">
+    <span class="scroll-label" id="scrollLabel">Reproduciendo</span>
+    <button class="pause-btn" id="pauseBtn" title="Pausar">⏸</button>
+  </div>
+</div>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay">
+  <div class="ov-backdrop" id="ovBackdrop"></div>
+  <div class="ov-panel">
+    <div class="ov-head">
+      <div class="ov-back" id="ovBack">
+        <div class="ov-back-line"></div>
+        <span class="ov-back-label">Todos los diseños</span>
+      </div>
+      <div class="ov-title-wrap">
+        <div class="ov-title" id="ovTitle"></div>
+        <div class="ov-attrs" id="ovAttrs"></div>
+      </div>
+    </div>
+
+    <div class="ov-deck-row">
+      <div class="deck-arrow" id="deckPrev">←</div>
+      <div>
+        <div class="deck-stage" id="deckStage"></div>
+        <div class="ov-pose-dots" id="poseDots"></div>
+      </div>
+      <div class="deck-arrow" id="deckNext">→</div>
+    </div>
+
+    <div class="ov-cta">
+      <button class="btn-outline">Guardar</button>
+      <button class="btn-solid">Agendar mi cita →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Palette reference swatch -->
+<div class="palette-swatch">
+  Paleta
+  <div class="sw" style="background:#FEF9F7;border:1px solid #ddd" title="#FEF9F7 — bg"></div>
+  <div class="sw" style="background:#F7EDE8" title="#F7EDE8 — blush cream"></div>
+  <div class="sw" style="background:#C98B8B" title="#C98B8B — rosé"></div>
+  <div class="sw" style="background:#B76E79" title="#B76E79 — rose gold"></div>
+  <div class="sw" style="background:#E8D5C4" title="#E8D5C4 — champagne"></div>
+  <div class="sw" style="background:#3A1020" title="#3A1020 — plum anchor"></div>
+</div>
+
+<script>
+/* ── DATA ──────────────────────────────────────── */
+const DESIGNS = [
+  { name:'French Nude',  attrs:['Nude','Almendra','Glossy','French'],  bg:'linear-gradient(145deg,#8c6858 0%,#3a2418 100%)', badge:null },
+  { name:'Estrellas',    attrs:['Blanco','Almendra','Nail Art'],        bg:'linear-gradient(145deg,#5a7a68 0%,#2a3c2e 100%)', badge:'Nuevo' },
+  { name:'Rosa Sutil',   attrs:['Rosa','Oval','Satinado','Sólido'],     bg:'linear-gradient(145deg,#a06878 0%,#4a2030 100%)', badge:null },
+  { name:'Rojo Mate',    attrs:['Rojo','Cuadrada','Matte','Sólido'],    bg:'linear-gradient(145deg,#8c2828 0%,#3c1010 100%)', badge:'Popular' },
+  { name:'Ombré Nude',   attrs:['Nude','Almendra','Chrome','Ombré'],    bg:'linear-gradient(155deg,#5a5878 0%,#20202e 100%)', badge:null },
+  { name:'Dorado Glam',  attrs:['Dorado','Stiletto','Glitter'],         bg:'linear-gradient(145deg,#8c7840 0%,#3a2c10 100%)', badge:'Temporada' },
+];
+const POSES = [
+  { label:'Garra',      bg:'linear-gradient(148deg,#7a4838,#2e1810)' },
+  { label:'Ascendente', bg:'linear-gradient(148deg,#485e4a,#182018)' },
+  { label:'Doble',      bg:'linear-gradient(148deg,#484868,#181828)' },
+  { label:'Rocío',      bg:'linear-gradient(148deg,#6a6030,#2a2808)' },
+];
+
+/* ── BUILD CAROUSEL ──────────────────────────── */
+const track    = document.getElementById('carouselTrack');
+const dotsEl   = document.getElementById('progressDots');
+const pauseBtn = document.getElementById('pauseBtn');
+const lbl      = document.getElementById('scrollLabel');
+document.getElementById('designCount').textContent = DESIGNS.length + ' diseños';
+
+DESIGNS.forEach((d, i) => {
+  const card = document.createElement('div');
+  card.className = 'design-card';
+  card.style.animationDelay = `${0.05 + i * 0.07}s`;
+  card.innerHTML = `
+    <div class="card-img">
+      <div class="card-bg" style="background:${d.bg}"></div>
+      <div class="card-vig"></div>
+      <div class="card-pips">${POSES.map((_,pi)=>`<div class="pip${pi===0?' on':''}"></div>`).join('')}</div>
+      ${d.badge?`<div class="card-badge">${d.badge}</div>`:''}
+      <div class="card-name">${d.name}</div>
+    </div>
+    <div class="card-foot">
+      <div class="card-attrs">${d.attrs.map(a=>`<span>${a}</span>`).join('')}</div>
+      <span class="card-chevron">→</span>
+    </div>`;
+  card.addEventListener('click', () => openOverlay(i));
+  track.appendChild(card);
+
+  const dot = document.createElement('div');
+  dot.className = 'pdot' + (i===0?' active':'');
+  dot.addEventListener('click', () => {
+    const c = track.children[i];
+    track.scrollTo({ left: c.offsetLeft - parseInt(getComputedStyle(track).paddingLeft), behavior:'smooth' });
+  });
+  dotsEl.appendChild(dot);
+});
+
+/* ── AUTO-SCROLL ─────────────────────────────── */
+let playing = true, raf, lastTs = null;
+const SPEED = 38;
+
+function loop(ts) {
+  if (!playing) return;
+  if (lastTs !== null) {
+    const dt = (ts - lastTs) / 1000;
+    const max = track.scrollWidth - track.clientWidth;
+    track.scrollLeft += SPEED * dt;
+    if (track.scrollLeft >= max - 1) { track.style.scrollBehavior='auto'; track.scrollLeft=0; track.style.scrollBehavior=''; }
+  }
+  lastTs = ts;
+  raf = requestAnimationFrame(loop);
+}
+raf = requestAnimationFrame(loop);
+
+const pause = () => { lastTs=null; cancelAnimationFrame(raf); };
+const resume = () => { if(playing){ lastTs=null; raf=requestAnimationFrame(loop); }};
+
+track.addEventListener('pointerenter', pause);
+track.addEventListener('pointerleave', resume);
+track.addEventListener('touchstart', pause, { passive:true });
+track.addEventListener('touchend', () => { if(playing) setTimeout(resume, 1800); }, { passive:true });
+
+pauseBtn.addEventListener('click', () => {
+  playing = !playing;
+  pauseBtn.textContent = playing ? '⏸' : '▶';
+  lbl.textContent = playing ? 'Reproduciendo' : 'En pausa';
+  playing ? resume() : pause();
+});
+
+track.addEventListener('scroll', () => {
+  const pct = track.scrollLeft / (track.scrollWidth - track.clientWidth);
+  const idx = Math.round(pct * (DESIGNS.length - 1));
+  document.querySelectorAll('.pdot').forEach((d,i) => d.classList.toggle('active', i===idx));
+}, { passive:true });
+
+/* ── POSE DECK ───────────────────────────────── */
+let poseIdx=0, deckAnim=false, activeDesign=0;
+
+function rel(i) {
+  const n=POSES.length; let d=((i-poseIdx)%n+n)%n;
+  if(d>n/2) d-=n; return d;
+}
+function buildDeck() {
+  const stage=document.getElementById('deckStage'); stage.innerHTML='';
+  const n=POSES.length;
+  [...Array(n).keys()].sort((a,b)=>Math.abs(rel(b))-Math.abs(rel(a))).forEach(i => {
+    const r=rel(i);
+    const card=document.createElement('div'); card.className='pcard'; card.dataset.i=i;
+    const tx=-50+r*13, ty=-50+Math.abs(r)*10;
+    card.style.cssText=`transform:translate(${tx}%,${ty}%) rotate(${r*5}deg) scale(${1-Math.abs(r)*0.1});opacity:${1-Math.abs(r)*0.28};z-index:${n-Math.abs(r)};transition:none;`;
+    card.innerHTML=`<div class="pcard-bg" style="background:${DESIGNS[activeDesign].bg}"></div><div class="pcard-vig"></div><div class="pcard-lbl">${POSES[i].label}</div>`;
+    stage.appendChild(card);
+  });
+  const pd=document.getElementById('poseDots'); pd.innerHTML='';
+  POSES.forEach((_,i)=>{const d=document.createElement('div');d.className='ov-pdot'+(i===poseIdx?' active':'');d.addEventListener('click',()=>moveDeck(i-poseIdx));pd.appendChild(d);});
+}
+
+function moveDeck(dir) {
+  if(deckAnim||!dir) return; deckAnim=true;
+  const n=POSES.length;
+  document.querySelectorAll('.pcard').forEach(card => {
+    const i=parseInt(card.dataset.i); let r=rel(i)-dir;
+    if(r>n/2) r-=n; if(r<-n/2) r+=n;
+    card.style.transition='transform .52s cubic-bezier(0.34,1.15,0.64,1), opacity .4s ease';
+    card.style.transform=`translate(${-50+r*13}%,${-50+Math.abs(r)*10}%) rotate(${r*5}deg) scale(${1-Math.abs(r)*0.1})`;
+    card.style.opacity=1-Math.abs(r)*0.28; card.style.zIndex=n-Math.abs(r);
+  });
+  setTimeout(()=>{ poseIdx=((poseIdx+dir)%POSES.length+POSES.length)%POSES.length; deckAnim=false; buildDeck(); }, 530);
+}
+
+/* ── OVERLAY ─────────────────────────────────── */
+function openOverlay(idx) {
+  activeDesign=idx; poseIdx=0;
+  const d=DESIGNS[idx];
+  document.getElementById('ovTitle').textContent=d.name;
+  document.getElementById('ovAttrs').innerHTML=d.attrs.map(a=>`<span>${a}</span>`).join('');
+  buildDeck();
+  document.getElementById('overlay').classList.add('open');
+  pause();
+}
+function closeOverlay() {
+  document.getElementById('overlay').classList.remove('open');
+  resume();
+}
+
+document.getElementById('ovBackdrop').addEventListener('click', closeOverlay);
+document.getElementById('ovBack').addEventListener('click', closeOverlay);
+document.getElementById('deckNext').addEventListener('click', ()=>moveDeck(1));
+document.getElementById('deckPrev').addEventListener('click', ()=>moveDeck(-1));
+
+let sx=0,sy=0;
+document.getElementById('deckStage').addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
+document.getElementById('deckStage').addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+  if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>34) moveDeck(dx<0?1:-1);
+},{passive:true});
+
+document.addEventListener('keydown',e=>{
+  const open=document.getElementById('overlay').classList.contains('open');
+  if(e.key==='Escape'&&open) closeOverlay();
+  if(e.key==='ArrowRight') moveDeck(1);
+  if(e.key==='ArrowLeft')  moveDeck(-1);
+});
+
+/* ── CURSOR ─────────────────────────────────── */
+const cur=document.getElementById('cursor');
+if(cur){
+  let cx=0,cy=0,mx=0,my=0;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+  (function loop(){cx+=(mx-cx)*0.13;cy+=(my-cy)*0.13;cur.style.transform=`translate(calc(${cx}px - 50%),calc(${cy}px - 50%))`;requestAnimationFrame(loop);})();
+  document.querySelectorAll('button,.design-card,.deck-arrow,.ov-back,.ov-backdrop,.pdot,.ov-pdot')
+    .forEach(el=>{el.addEventListener('mouseenter',()=>cur.classList.add('h'));el.addEventListener('mouseleave',()=>cur.classList.remove('h'));});
+  document.addEventListener('mousedown',()=>cur.classList.add('c'));
+  document.addEventListener('mouseup',()=>cur.classList.remove('c'));
+}
+</script>
+</body>
+</html>
