@@ -98,22 +98,27 @@ No jewelry, no watermarks. Professional Dior/Chanel quality result.`;
 
   for (const baseId of BASES) {
     const baseFile = BASE_FILES[baseId];
-    const baseBuf = readFileSync(baseFile);
-    const parts = [
-      { inlineData: { mimeType: "image/jpeg", data: baseBuf.toString("base64") } },
-      { inlineData: { mimeType, data: imgB64 } },
-      { text: PROMPT },
-    ];
-    const result = await callGemini(parts, true);
-    const outPath = join(outDir, `${baseId}.jpg`);
-    const relPath = `/catalog-preview/${style.id}/${baseId}.jpg`;
+    try {
+      const baseBuf = readFileSync(baseFile);
+      const parts = [
+        { inlineData: { mimeType: "image/jpeg", data: baseBuf.toString("base64") } },
+        { inlineData: { mimeType, data: imgB64 } },
+        { text: PROMPT },
+      ];
+      const result = await callGemini(parts, true);
+      const outPath = join(outDir, `${baseId}.jpg`);
+      const relPath = `/catalog-preview/${style.id}/${baseId}.jpg`;
 
-    if (result?.type === "image") {
-      writeFileSync(outPath, Buffer.from(result.data, "base64"));
-      await db.insert(nailStyleVariants).values({ styleId: style.id, baseId, imagePath: relPath, status: "done" });
-      if (!firstPath) firstPath = relPath;
-    } else {
-      await db.insert(nailStyleVariants).values({ styleId: style.id, baseId, imagePath: "", status: "error", errorMsg: "generation failed" });
+      if (result?.type === "image") {
+        writeFileSync(outPath, Buffer.from(result.data, "base64"));
+        await db.insert(nailStyleVariants).values({ styleId: style.id, baseId, imagePath: relPath, status: "done" });
+        if (!firstPath) firstPath = relPath;
+      } else {
+        await db.insert(nailStyleVariants).values({ styleId: style.id, baseId, imagePath: "", status: "error", errorMsg: "generation failed" });
+        allOk = false;
+      }
+    } catch (e) {
+      await db.insert(nailStyleVariants).values({ styleId: style.id, baseId, imagePath: "", status: "error", errorMsg: e instanceof Error ? e.message : "unknown error" });
       allOk = false;
     }
   }

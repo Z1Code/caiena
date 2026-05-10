@@ -14,9 +14,11 @@ export async function POST(
   }
 
   const { styleId } = await params;
+  const id = parseInt(styleId);
+  if (isNaN(id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   const [maxRow] = await db.select({ m: max(nailStyles.sortOrder) }).from(nailStyles);
   const nextOrder = (maxRow?.m ?? 0) + 1;
 
-  await db.update(nailStyles).set({ published: true, sortOrder: nextOrder }).where(eq(nailStyles.id, parseInt(styleId)));
+  await db.update(nailStyles).set({ published: true, sortOrder: nextOrder }).where(eq(nailStyles.id, id));
   return NextResponse.json({ ok: true });
 }

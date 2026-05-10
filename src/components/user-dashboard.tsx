@@ -1,6 +1,6 @@
 import { db } from "@/db"
 import { userProfiles, bookings, services, nailStyles, nailStyleVariants } from "@/db/schema"
-import { eq, and, desc, gt, count, asc } from "drizzle-orm"
+import { eq, and, desc, gt, count, asc, inArray } from "drizzle-orm"
 import { LinkWhatsAppCard } from "./link-whatsapp-card"
 import { BurnerNameModal } from "./burner-name-modal"
 import { DashboardCatalogClient } from "./catalog/DashboardCatalogClient"
@@ -88,7 +88,9 @@ export async function UserDashboard({ session }: { session: Session }) {
     .orderBy(asc(nailStyles.sortOrder), asc(nailStyles.id));
 
   const catalogVariants = catalogStyles.length > 0
-    ? await db.select().from(nailStyleVariants).where(eq(nailStyleVariants.status, "done"))
+    ? await db.select().from(nailStyleVariants).where(
+        and(eq(nailStyleVariants.status, "done"), inArray(nailStyleVariants.styleId, catalogStyles.map(s => s.id)))
+      )
     : [];
 
   const variantsByStyle = catalogVariants.reduce<Record<number, typeof catalogVariants>>(

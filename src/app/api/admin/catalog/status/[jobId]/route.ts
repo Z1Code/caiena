@@ -14,7 +14,9 @@ export async function GET(
   }
 
   const { jobId } = await params;
-  const [job] = await db.select().from(catalogQueue).where(eq(catalogQueue.id, parseInt(jobId)));
+  const id = parseInt(jobId);
+  if (isNaN(id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  const [job] = await db.select().from(catalogQueue).where(eq(catalogQueue.id, id));
   if (!job) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const variants = job.styleId
