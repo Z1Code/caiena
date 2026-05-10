@@ -132,7 +132,6 @@ export function NailCarousel({ styles, onSelect }: Props) {
           ref={trackRef}
           className="flex gap-5 overflow-x-auto pb-4"
           style={{
-            scrollSnapType: "x mandatory",
             scrollbarWidth: "none",
             msOverflowStyle: "none",
           }}
@@ -142,8 +141,8 @@ export function NailCarousel({ styles, onSelect }: Props) {
           onTouchEnd={handleTouchEnd}
         >
           <div className="flex-none w-16 shrink-0" aria-hidden />
-          {styles.map((style) => (
-            <CarouselCard key={style.id} style={style} onClick={() => onSelect?.(style)} />
+          {styles.map((style, i) => (
+            <CarouselCard key={style.id} style={style} onClick={() => onSelect?.(style)} poseIndex={i} />
           ))}
           <div className="flex-none w-16 shrink-0" aria-hidden />
         </div>
@@ -180,19 +179,25 @@ export function NailCarousel({ styles, onSelect }: Props) {
   );
 }
 
+const POSE_ORDER = ["garra", "ascendente", "doble", "rocio"] as const;
+
 function CarouselCard({
   style,
   onClick,
+  poseIndex,
 }: {
   style: CatalogStyle;
   onClick: () => void;
+  poseIndex: number;
 }) {
-  const thumb = style.thumbnailUrl ?? style.variants[0]?.imagePath ?? null;
+  const poseId = POSE_ORDER[poseIndex % 4];
+  const variant = style.variants.find((v) => v.baseId === poseId);
+  const thumb = variant?.imagePath ?? style.variants[0]?.imagePath ?? style.thumbnailUrl ?? null;
 
   return (
     <div
       className="flex-none cursor-pointer group"
-      style={{ width: "clamp(180px, 22vw, 260px)", scrollSnapAlign: "center" }}
+      style={{ width: "clamp(180px, 22vw, 260px)" }}
       onClick={onClick}
     >
       {/* 2:3 image */}
