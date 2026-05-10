@@ -2,6 +2,15 @@ import { db } from "@/db";
 import { services } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 
+// 5 nail shapes in a fan arrangement — each fills with a different palette color
+const NAILS = [
+  { color: "#E8D5C4", delay: "0ms",   rotate: "-20deg", tx: "-110%", height: "110px" },
+  { color: "#C98B8B", delay: "150ms", rotate: "-10deg", tx: "-55%",  height: "125px" },
+  { color: "#3A1020", delay: "300ms", rotate: "0deg",   tx: "0%",    height: "132px" },
+  { color: "#B76E79", delay: "450ms", rotate: "10deg",  tx: "55%",   height: "125px" },
+  { color: "#E8D5C4", delay: "600ms", rotate: "20deg",  tx: "110%",  height: "110px" },
+];
+
 export async function Hero() {
   const topServices = await db
     .select({ name: services.name, durationMinutes: services.durationMinutes })
@@ -15,26 +24,99 @@ export async function Hero() {
       id="inicio"
       className="relative min-h-screen flex items-center justify-center overflow-hidden noise-overlay"
     >
-      {/* Layered background */}
+      {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-cream via-background to-blush/20" />
-
-      {/* Morphing blobs */}
       <div className="blob blob-rose w-[480px] h-[480px] top-[-60px] right-[-80px] opacity-70" />
       <div className="blob blob-b blob-gold w-[360px] h-[360px] bottom-[-40px] left-[-60px] opacity-60" />
       <div className="blob blob-warm w-[280px] h-[280px] top-[40%] left-[15%] opacity-40" />
-      <div className="blob blob-b blob-rose w-[200px] h-[200px] bottom-[20%] right-[10%] opacity-30" />
 
-      {/* Diagonal accent line */}
-      <div className="absolute top-0 right-[30%] w-px h-[40vh] bg-gradient-to-b from-transparent via-accent-light/30 to-transparent" />
-
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 w-full pt-24">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 w-full pt-28 sm:pt-32">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
-          {/* Left: main content */}
+
+          {/* Left: content */}
           <div className="flex-1 text-center lg:text-left">
-            {/* Logo mark */}
+
+            {/* Nail fan animation */}
             <div className="animate-scale-in mb-10 flex justify-center lg:justify-start">
-              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blush/80 to-accent-light/50 border border-accent-light/40 flex items-center justify-center shadow-lg shadow-accent/10">
-                <span className="font-serif text-4xl text-accent-dark italic">C</span>
+              <div className="relative h-36 w-52 flex items-end justify-center">
+                {NAILS.map((nail, i) => (
+                  <div
+                    key={i}
+                    className="absolute bottom-0"
+                    style={{
+                      transform: `translateX(${nail.tx}) rotate(${nail.rotate})`,
+                      transformOrigin: "bottom center",
+                      width: "32px",
+                      height: nail.height,
+                    }}
+                  >
+                    {/* Nail shape */}
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        overflow: "hidden",
+                        borderRadius: "50% 50% 12px 12px / 40% 40% 8px 8px",
+                        background: "#f0e8e4",
+                        border: "1.5px solid rgba(58,16,32,0.12)",
+                        position: "relative",
+                      }}
+                    >
+                      {/* Liquid fill container */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          overflow: "hidden",
+                          borderRadius: "inherit",
+                        }}
+                      >
+                        {/* Rising liquid */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: 0,
+                            left: "-10%",
+                            right: "-10%",
+                            height: "100%",
+                            background: nail.color,
+                            animation: `liquidRise 1.2s cubic-bezier(.22,1,.36,1) ${nail.delay} both`,
+                          }}
+                        />
+                        {/* Wave surface */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: "calc(100% - 6px)",
+                            left: "-20%",
+                            right: "-20%",
+                            height: "12px",
+                            background: nail.color,
+                            borderRadius: "50%",
+                            animation: `wave 2.4s ease-in-out ${nail.delay} infinite, liquidRise 1.2s cubic-bezier(.22,1,.36,1) ${nail.delay} both`,
+                            opacity: 0.7,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    {/* Drip */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: "-4px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: "6px",
+                        borderRadius: "0 0 50% 50%",
+                        background: nail.color,
+                        animation: `drip 0.6s ease ${nail.delay} both`,
+                      }}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -103,7 +185,7 @@ export async function Hero() {
             </div>
           </div>
 
-          {/* Right: floating glass card — top services */}
+          {/* Right: floating glass card */}
           {topServices.length > 0 && (
             <div className="animate-fade-up [animation-delay:500ms] w-full lg:w-72 flex-shrink-0">
               <div className="glass-card rounded-3xl p-6">
