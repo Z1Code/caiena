@@ -152,7 +152,15 @@ REFERENCE PHOTO (second image): Extract ONLY the nail color, pattern, art, and f
 
 BASE PHOTO (first image): Professional studio hand photo with bare natural nails on pure black background. Your canvas.
 
-Paint every nail with the exact design from the reference. Keep EVERYTHING else identical: pose, skin tone, background, lighting.
+CRITICAL UNIFORMITY RULE — READ CAREFULLY:
+- Apply EXACTLY THE SAME design to EVERY SINGLE NAIL. All nails must look IDENTICAL.
+- Do NOT create an accent nail or feature nail with a different color or pattern.
+- Do NOT leave any nail bare, lighter, darker, or with a different finish.
+- Every nail = same color, same pattern, same art, same finish. Zero exceptions.
+- One hand pose = exactly 5 nails. Double-hand pose = exactly 10 nails. ALL uniform.
+- If the reference shows an accent nail, IGNORE that — apply the dominant design uniformly.
+
+Keep EVERYTHING else identical: pose, skin tone, background, lighting.
 No jewelry, no rings, no accessories. No watermarks, no text.
 Professional luxury catalog photo quality — sharp, editorial, Dior/Chanel level.`;
 

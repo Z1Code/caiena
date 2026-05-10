@@ -25,6 +25,11 @@
 }
 
 /* ── Catalog animations ───────────────────────────────────────────── */
+@keyframes scrollCarousel {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
 @keyframes liquidRise {
   from { transform: translateY(100%); }
   to   { transform: translateY(0%); }

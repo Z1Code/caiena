@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useState } from "react";
 
 export interface NailVariant {
   id: number;
@@ -26,59 +26,35 @@ interface Props {
   onSelect?: (style: CatalogStyle) => void;
 }
 
-const SPEED = 38; // px/sec
+// Approximate px per card (width + gap) for duration calc
+const CARD_PX = 245;
+const SPEED_PX_S = 38;
+
+const POSE_ORDER = ["garra", "ascendente", "doble", "rocio"] as const;
 
 export function NailCarousel({ styles, onSelect }: Props) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const rafRef = useRef<number>(0);
-  const lastTsRef = useRef<number | null>(null);
-  const [playing, setPlaying] = useState(true);
-  const [activeIdx, setActiveIdx] = useState(0);
-  const playingRef = useRef(true);
-
-  useEffect(() => { playingRef.current = playing; }, [playing]);
-
-  const loop = useCallback((ts: number) => {
-    const track = trackRef.current;
-    if (!track || !playingRef.current) { lastTsRef.current = null; return; }
-    if (lastTsRef.current !== null) {
-      const dt = (ts - lastTsRef.current) / 1000;
-      const max = track.scrollWidth - track.clientWidth;
-      if (max > 0) {
-        track.scrollLeft += SPEED * dt;
-        if (track.scrollLeft >= max - 1) {
-          track.style.scrollBehavior = "auto";
-          track.scrollLeft = 0;
-          track.style.scrollBehavior = "";
-        }
-        const cardWidth = max / Math.max(styles.length - 1, 1);
-        setActiveIdx(Math.min(Math.round(track.scrollLeft / cardWidth), styles.length - 1));
-      }
-    }
-    lastTsRef.current = ts;
-    rafRef.current = requestAnimationFrame(loop);
-  }, [styles.length]);
-
-  useEffect(() => {
-    if (playing) {
-      rafRef.current = requestAnimationFrame(loop);
-    } else {
-      cancelAnimationFrame(rafRef.current);
-      lastTsRef.current = null;
-    }
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [playing, loop]);
-
-  const touchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const handleTouchEnd = () => {
-    if (touchTimeoutRef.current) clearTimeout(touchTimeoutRef.current);
-    touchTimeoutRef.current = setTimeout(() => setPlaying(true), 1800);
-  };
+  const [paused, setPaused] = useState(false);
+  const touchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (styles.length === 0) return null;
 
+  // Duplicate content so the seamless loop works: animate translateX(0 → -50%)
+  const doubled = [...styles, ...styles];
+  const duration = (styles.length * CARD_PX) / SPEED_PX_S; // seconds
+
+  const handleTouchStart = () => {
+    if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+    setPaused(true);
+  };
+  const handleTouchEnd = () => {
+    touchTimerRef.current = setTimeout(() => setPaused(false), 1800);
+  };
+
   return (
-    <section className="relative py-16 overflow-hidden" style={{ background: "var(--caiena-bg)" }}>
+    <section
+      className="relative py-16"
+      style={{ background: "var(--caiena-bg)", overflow: "hidden" }}
+    >
       {/* Header */}
       <div className="max-w-7xl mx-auto px-6 mb-8 flex items-end justify-between">
         <div>
@@ -99,87 +75,60 @@ export function NailCarousel({ styles, onSelect }: Props) {
           </h2>
         </div>
         <button
-          onClick={() => setPlaying((p) => !p)}
+          onClick={() => setPaused((p) => !p)}
           className="flex items-center gap-2 text-xs tracking-widest uppercase px-4 py-2 rounded-full border transition-colors"
           style={{ borderColor: "var(--caiena-rose-dark)", color: "var(--caiena-rose-dark)" }}
-          aria-label={playing ? "Pausar" : "Reproducir"}
+          aria-label={paused ? "Reproducir" : "Pausar"}
         >
-          {playing ? (
+          {paused ? (
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          ) : (
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
               <rect x="6" y="4" width="4" height="16" />
               <rect x="14" y="4" width="4" height="16" />
             </svg>
-          ) : (
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
           )}
-          {playing ? "Pausar" : "Ver"}
+          {paused ? "Ver" : "Pausar"}
         </button>
       </div>
 
-      {/* Carousel with edge fades */}
+      {/* Carousel — infinite CSS scroll */}
       <div
-        className="relative"
         style={{
           maskImage:
             "linear-gradient(to right, transparent, black 80px, black calc(100% - 80px), transparent)",
           WebkitMaskImage:
             "linear-gradient(to right, transparent, black 80px, black calc(100% - 80px), transparent)",
         }}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         <div
-          ref={trackRef}
-          className="flex gap-5 overflow-x-auto pb-4"
+          className="flex gap-5 pb-4"
           style={{
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
+            width: "max-content",
+            animation: `scrollCarousel ${duration}s linear infinite`,
+            animationPlayState: paused ? "paused" : "running",
+            willChange: "transform",
           }}
-          onMouseEnter={() => setPlaying(false)}
-          onMouseLeave={() => setPlaying(true)}
-          onTouchStart={() => setPlaying(false)}
-          onTouchEnd={handleTouchEnd}
         >
-          <div className="flex-none w-16 shrink-0" aria-hidden />
-          {styles.map((style, i) => (
-            <CarouselCard key={style.id} style={style} onClick={() => onSelect?.(style)} poseIndex={i} />
+          {doubled.map((style, i) => (
+            <CarouselCard
+              key={`${style.id}-${i}`}
+              style={style}
+              poseIndex={i}
+              onClick={() => onSelect?.(style)}
+            />
           ))}
-          <div className="flex-none w-16 shrink-0" aria-hidden />
         </div>
-      </div>
-
-      {/* Progress dots */}
-      <div className="flex justify-center gap-2 mt-6">
-        {styles.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => {
-              const track = trackRef.current;
-              if (!track) return;
-              const max = track.scrollWidth - track.clientWidth;
-              const cardWidth = max / Math.max(styles.length - 1, 1);
-              track.style.scrollBehavior = "smooth";
-              track.scrollLeft = i * cardWidth;
-              setActiveIdx(i);
-            }}
-            aria-label={`Diseño ${i + 1}`}
-            className="rounded-full transition-all duration-300"
-            style={{
-              width: i === activeIdx ? "20px" : "6px",
-              height: "6px",
-              background:
-                i === activeIdx
-                  ? "var(--caiena-rose-dark)"
-                  : "var(--caiena-champagne)",
-            }}
-          />
-        ))}
       </div>
     </section>
   );
 }
-
-const POSE_ORDER = ["garra", "ascendente", "doble", "rocio"] as const;
 
 function CarouselCard({
   style,
