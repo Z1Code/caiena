@@ -7,14 +7,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 
 import { createHash } from "crypto";
 import { join, dirname, basename } from "path";
 import { fileURLToPath } from "url";
-import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { eq } from "drizzle-orm";
-import {
-  nailStyles,
-  nailStyleVariants,
-  catalogQueue,
-} from "../src/db/schema.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -26,10 +19,10 @@ const OUTPUT_DIR = join(ROOT, "public", "catalog-preview");
 
 const BASES = ["garra", "ascendente", "doble", "rocio"];
 const BASE_FILES = {
-  garra:       join(BASES_DIR, "base_garra.jpg"),
-  ascendente:  join(BASES_DIR, "base_ascendente.jpg"),
-  doble:       join(BASES_DIR, "base_doble.jpg"),
-  rocio:       join(BASES_DIR, "base_rocio.jpg"),
+  garra:      join(BASES_DIR, "base_garra.jpg"),
+  ascendente: join(BASES_DIR, "base_ascendente.jpg"),
+  doble:      join(BASES_DIR, "base_doble.jpg"),
+  rocio:      join(BASES_DIR, "base_rocio.jpg"),
 };
 
 function loadEnv() {
@@ -46,7 +39,51 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 if (!GEMINI_API_KEY) { console.error("❌ Falta GEMINI_API_KEY"); process.exit(1); }
 
 const sql = neon(process.env.DATABASE_URL);
-const db = drizzle(sql);
+
+// ─── DB helpers (raw SQL, matching project pattern) ────────────────────────
+
+async function dbGetQueueByHash(hash) {
+  const rows = await sql`
+    SELECT id, status, style_id FROM catalog_queue WHERE source_hash = ${hash}
+  `;
+  return rows[0] ?? null;
+}
+
+async function dbInsertStyle({ name, category, color, acabado, forma, estilo }) {
+  const rows = await sql`
+    INSERT INTO nail_styles (name, description, category, prompt, color, acabado, forma, estilo, active, published, sort_order)
+    VALUES (${name}, '', ${category}, '', ${color ?? null}, ${acabado ?? null}, ${forma ?? null}, ${estilo ?? null}, true, false, 0)
+    RETURNING id
+  `;
+  return rows[0].id;
+}
+
+async function dbInsertQueue({ sourceImagePath, sourceHash, styleId }) {
+  const rows = await sql`
+    INSERT INTO catalog_queue (source_image_path, source_hash, style_id, status)
+    VALUES (${sourceImagePath}, ${sourceHash}, ${styleId}, 'processing')
+    RETURNING id
+  `;
+  return rows[0].id;
+}
+
+async function dbInsertVariant({ styleId, baseId, imagePath, status, errorMsg }) {
+  await sql`
+    INSERT INTO nail_style_variants (style_id, base_id, image_path, status, error_msg)
+    VALUES (${styleId}, ${baseId}, ${imagePath}, ${status}, ${errorMsg ?? null})
+    ON CONFLICT (style_id, base_id) DO UPDATE SET image_path = EXCLUDED.image_path, status = EXCLUDED.status, error_msg = EXCLUDED.error_msg
+  `;
+}
+
+async function dbUpdateStyleThumbnail(styleId, thumbnailUrl) {
+  await sql`UPDATE nail_styles SET thumbnail_url = ${thumbnailUrl} WHERE id = ${styleId}`;
+}
+
+async function dbUpdateQueueStatus(queueId, status) {
+  await sql`UPDATE catalog_queue SET status = ${status}, processed_at = NOW() WHERE id = ${queueId}`;
+}
+
+// ─── Gemini helpers ────────────────────────────────────────────────────────
 
 function toInlineData(filePath, mimeType = "image/jpeg") {
   return { inlineData: { mimeType, data: readFileSync(filePath).toString("base64") } };
@@ -95,10 +132,7 @@ async function classifyDesign(designFile) {
   "estilo": "one of: french|solid|floral|geometrico|glitter_foil|ombre|chrome|minimalista|nail_art"
 }`;
 
-  const result = await geminiGenerate(
-    [toInlineData(designFile), { text: prompt }],
-    false
-  );
+  const result = await geminiGenerate([toInlineData(designFile), { text: prompt }], false);
   if (!result) return null;
   try {
     const json = result.text.replace(/```json\n?|\n?```/g, "").trim();
@@ -125,6 +159,8 @@ Professional luxury catalog photo quality — sharp, editorial, Dior/Chanel leve
   return geminiGenerate([toInlineData(baseFile), toInlineData(designFile), { text: prompt }], true);
 }
 
+// ─── Main ──────────────────────────────────────────────────────────────────
+
 async function main() {
   mkdirSync(OUTPUT_DIR, { recursive: true });
 
@@ -134,59 +170,51 @@ async function main() {
 
   console.log(`🎨 Encontradas ${allImages.length} imágenes "37*"\n`);
 
+  let totalOk = 0;
+  let totalErrors = 0;
+
   for (const imgPath of allImages) {
     const filename = basename(imgPath);
     const hash = createHash("sha256").update(readFileSync(imgPath)).digest("hex");
 
-    // Check if already processed
-    const existing = await db
-      .select({ id: catalogQueue.id, status: catalogQueue.status, styleId: catalogQueue.styleId })
-      .from(catalogQueue)
-      .where(eq(catalogQueue.sourceHash, hash));
-
-    if (existing.length > 0 && existing[0].status === "done") {
-      console.log(`⏭️  ${filename} — ya procesado (styleId=${existing[0].styleId})`);
-      continue;
+    // sha256 dedup check
+    const existing = await dbGetQueueByHash(hash);
+    if (existing) {
+      if (existing.status === "done") {
+        console.log(`⏭️  ${filename} — ya procesado (styleId=${existing.style_id})`);
+        continue;
+      }
+      // Clean up stale processing entry so we can retry
+      if (existing.status === "processing" || existing.status === "error") {
+        console.log(`  ♻️  Limpiando entrada previa (status=${existing.status})`);
+        await sql`DELETE FROM catalog_queue WHERE id = ${existing.id}`;
+        await sql`DELETE FROM nail_style_variants WHERE style_id = ${existing.style_id}`;
+        await sql`DELETE FROM nail_styles WHERE id = ${existing.style_id}`;
+      }
     }
 
     console.log(`\n⏳ Procesando: ${filename}`);
 
-    // Classify first
+    // Classify
     console.log("  📋 Clasificando...");
-    const classification = await classifyDesign(imgPath);
-    const name = classification?.name ?? filename.replace(/\.\w+$/, "");
-    console.log(`  → ${name} (${classification?.color ?? "?"} / ${classification?.acabado ?? "?"} / ${classification?.estilo ?? "?"})`);
+    const cls = await classifyDesign(imgPath);
+    const name = cls?.name ?? filename.replace(/\.\w+$/, "");
+    console.log(`  → ${name} (${cls?.color ?? "?"} / ${cls?.acabado ?? "?"} / ${cls?.estilo ?? "?"})`);
 
     // Insert nailStyle
-    const [style] = await db
-      .insert(nailStyles)
-      .values({
-        name,
-        description: "",
-        category: classification?.estilo ?? "nail_art",
-        prompt: "",
-        color: classification?.color ?? null,
-        acabado: classification?.acabado ?? null,
-        forma: classification?.forma ?? null,
-        estilo: classification?.estilo ?? null,
-        active: true,
-        published: false,
-        sortOrder: 0,
-      })
-      .returning({ id: nailStyles.id });
+    const styleId = await dbInsertStyle({
+      name,
+      category: cls?.estilo ?? "nail_art",
+      color: cls?.color,
+      acabado: cls?.acabado,
+      forma: cls?.forma,
+      estilo: cls?.estilo,
+    });
 
     // Insert queue entry
-    const [queueEntry] = await db
-      .insert(catalogQueue)
-      .values({
-        sourceImagePath: imgPath,
-        sourceHash: hash,
-        styleId: style.id,
-        status: "processing",
-      })
-      .returning({ id: catalogQueue.id });
+    const queueId = await dbInsertQueue({ sourceImagePath: imgPath, sourceHash: hash, styleId });
 
-    const styleOutputDir = join(OUTPUT_DIR, String(style.id));
+    const styleOutputDir = join(OUTPUT_DIR, String(styleId));
     mkdirSync(styleOutputDir, { recursive: true });
 
     let firstVariantPath = null;
@@ -203,26 +231,15 @@ async function main() {
       }
 
       const outPath = join(styleOutputDir, `${baseId}.jpg`);
-      const relPath = `/catalog-preview/${style.id}/${baseId}.jpg`;
+      const relPath = `/catalog-preview/${styleId}/${baseId}.jpg`;
 
       if (result?.type === "image") {
         writeFileSync(outPath, Buffer.from(result.data, "base64"));
-        await db.insert(nailStyleVariants).values({
-          styleId: style.id,
-          baseId,
-          imagePath: relPath,
-          status: "done",
-        });
+        await dbInsertVariant({ styleId, baseId, imagePath: relPath, status: "done" });
         if (!firstVariantPath) firstVariantPath = relPath;
         console.log(`    ✅ ${baseId}`);
       } else {
-        await db.insert(nailStyleVariants).values({
-          styleId: style.id,
-          baseId,
-          imagePath: "",
-          status: "error",
-          errorMsg: "All models failed",
-        });
+        await dbInsertVariant({ styleId, baseId, imagePath: "", status: "error", errorMsg: "All models failed" });
         console.log(`    ❌ ${baseId}`);
         allOk = false;
       }
@@ -231,18 +248,17 @@ async function main() {
     }
 
     if (firstVariantPath) {
-      await db.update(nailStyles).set({ thumbnailUrl: firstVariantPath }).where(eq(nailStyles.id, style.id));
+      await dbUpdateStyleThumbnail(styleId, firstVariantPath);
     }
 
-    await db.update(catalogQueue).set({
-      status: allOk ? "done" : "error",
-      processedAt: new Date(),
-    }).where(eq(catalogQueue.id, queueEntry.id));
+    const finalStatus = allOk ? "done" : "error";
+    await dbUpdateQueueStatus(queueId, finalStatus);
 
-    console.log(`  ${allOk ? "✅" : "⚠️ "} ${name} completado (id=${style.id})`);
+    if (allOk) totalOk++; else totalErrors++;
+    console.log(`  ${allOk ? "✅" : "⚠️ "} ${name} completado (id=${styleId})`);
   }
 
-  console.log("\n✨ Pipeline completo");
+  console.log(`\n✨ Pipeline completo — ${totalOk} exitosos, ${totalErrors} con errores`);
 }
 
 main().catch((e) => { console.error("Fatal:", e); process.exit(1); });
