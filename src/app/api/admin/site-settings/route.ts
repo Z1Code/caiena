@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "../../../../../auth";
 import { db } from "@/db";
 import { siteSettings } from "@/db/schema";
 
@@ -10,7 +9,7 @@ const DEFAULTS: Record<string, string> = {
 };
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const rows = await db.select().from(siteSettings);
@@ -20,7 +19,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body: Record<string, boolean> = await req.json();
