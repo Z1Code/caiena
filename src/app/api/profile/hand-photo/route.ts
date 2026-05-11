@@ -4,7 +4,7 @@ import { userProfiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { writeFile, unlink } from "fs/promises";
 import path from "path";
-import { auth } from "../../../../auth";
+import { auth } from "../../../../../auth";
 
 // GET — return the current stored hand photo URL
 export async function GET() {
