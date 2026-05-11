@@ -16,6 +16,7 @@ module.exports = {
         KAPSO_API_KEY: "28ccd4e91f522e15092198dfb6c99379e4b838005fe2fc10cfd3b2f05d1a3930",
         KAPSO_PHONE_NUMBER_ID: "937049409503126",
         KAPSO_WEBHOOK_SECRET: "9bac99539300c016d20cdff48bf6f5077ed2e5018eaf20c1fcce06543195355e",
+        WHATSAPP_BUSINESS_PHONE: "12057940509",
         // Google OAuth (for WhatsApp user identity) — set these after creating OAuth client
         GOOGLE_OAUTH_CLIENT_ID: "",
         GOOGLE_OAUTH_CLIENT_SECRET: "",
