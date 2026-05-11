@@ -17,6 +17,7 @@
  */
 
 import crypto from "crypto";
+import { sendBookingRequestEmail } from "@/lib/email";
 import { db } from "@/db";
 import {
   whatsappSessions,
@@ -321,6 +322,14 @@ async function handleWebBooking(from: string, token: string): Promise<void> {
     `📧 *Cuenta:* ${row.email}\n\n` +
     `Tu número de WhatsApp quedó vinculado a tu cuenta. Te confirmaremos disponibilidad en breve. 🌸`
   );
+
+  await sendBookingRequestEmail({
+    to:          row.email,
+    name:        row.name,
+    styleName:   row.styleName,
+    desiredDate: row.desiredDate,
+    desiredTime: row.desiredTime,
+  });
 }
 
 async function handleBookingRequest(from: string, idsStr: string): Promise<void> {

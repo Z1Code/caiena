@@ -16,27 +16,43 @@ const BASE_FILES: Record<string, string> = {
 };
 
 async function callGemini(parts: unknown[], preferImage: boolean) {
-  for (const model of ["gemini-3.1-flash-image-preview", "gemini-2.5-flash-preview-05-20"]) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts }],
-            generationConfig: { responseModalities: preferImage ? ["TEXT", "IMAGE"] : ["TEXT"] },
-          }),
-        }
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      const candidate = data.candidates?.[0];
-      const imgPart = candidate?.content?.parts?.find((p: { inlineData?: { mimeType?: string } }) => p.inlineData?.mimeType?.startsWith("image/"));
-      const txtPart = candidate?.content?.parts?.find((p: { text?: string }) => p.text);
-      if (preferImage && imgPart) return { type: "image" as const, data: imgPart.inlineData.data };
-      if (!preferImage && txtPart) return { type: "text" as const, text: txtPart.text };
-    } catch { continue; }
+  const model = "gemini-3.1-flash-image-preview";
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig: { responseModalities: preferImage ? ["TEXT", "IMAGE"] : ["TEXT"] },
+          safetySettings: [
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+          ],
+        }),
+      }
+    );
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`[catalog/generate] Gemini ${res.status}:`, errText.substring(0, 300));
+      return null;
+    }
+    const data = await res.json();
+    const candidate = data.candidates?.[0];
+    const finishReason = candidate?.finishReason;
+    if (finishReason && finishReason !== "STOP") {
+      console.error(`[catalog/generate] Gemini finishReason=${finishReason}`, JSON.stringify(candidate?.safetyRatings ?? []));
+    }
+    const imgPart = candidate?.content?.parts?.find((p: { inlineData?: { mimeType?: string } }) => p.inlineData?.mimeType?.startsWith("image/"));
+    const txtPart = candidate?.content?.parts?.find((p: { text?: string }) => p.text);
+    if (preferImage && imgPart) return { type: "image" as const, data: imgPart.inlineData.data };
+    if (!preferImage && txtPart) return { type: "text" as const, text: txtPart.text };
+    console.error(`[catalog/generate] Gemini returned no usable part. preferImage=${preferImage}, parts=${JSON.stringify((candidate?.content?.parts ?? []).map((p: Record<string, unknown>) => Object.keys(p)))}`);
+  } catch (e) {
+    console.error(`[catalog/generate] Gemini fetch error:`, e instanceof Error ? e.message : e);
   }
   return null;
 }
@@ -86,10 +102,25 @@ export async function POST(req: NextRequest) {
   const outDir = join(process.cwd(), "public/catalog-preview", String(style.id));
   mkdirSync(outDir, { recursive: true });
 
+  // Classify design to extract metadata (same as batch pipeline)
+  const classifyPrompt = `Analyze this nail design photo and return ONLY a JSON object (no markdown, no explanation) with these fields:
+{"name":"short elegant name in Spanish for this nail style (3-5 words, title case)","color":"one of: nude|rosa|rojo|burdeos|blanco|negro|azul|verde|morado|lila|coral|multicolor|plateado|dorado|gris|beige","acabado":"one of: glossy|matte|chrome|glitter|satinado","forma":"one of: cuadrada|redonda|oval|almendra|stiletto|coffin","estilo":"one of: french|solid|floral|geometrico|glitter_foil|ombre|chrome|minimalista|nail_art"}`;
+  const classifyResult = await callGemini([{ inlineData: { mimeType, data: imgB64 } }, { text: classifyPrompt }], false);
+  let meta: { name?: string; color?: string; acabado?: string; forma?: string; estilo?: string } = {};
+  if (classifyResult?.type === "text") {
+    try { meta = JSON.parse(classifyResult.text.replace(/```json\n?|\n?```/g, "").trim()); } catch { /* ignore */ }
+  }
+  if (meta.name && meta.name !== name) {
+    await db.update(nailStyles).set({ name: meta.name, color: meta.color ?? null, acabado: meta.acabado ?? null, forma: meta.forma ?? null, estilo: meta.estilo ?? null }).where(eq(nailStyles.id, style.id));
+  }
+
   const PROMPT = `You are a professional nail art retouching artist for a luxury nail catalog.
+
 TASK: Apply the nail design from the REFERENCE PHOTO onto the bare nails in the BASE PHOTO.
-REFERENCE PHOTO (second image): Extract ONLY the nail color, pattern, art, and finish. Ignore hand shape, skin tone, background, accessories.
-BASE PHOTO (first image): Professional studio hand photo with bare natural nails on black background. Your canvas.
+
+REFERENCE PHOTO (second image): Extract ONLY the nail color, pattern, art, and finish. Ignore hand shape, skin tone, background, jewelry, accessories.
+
+BASE PHOTO (first image): Professional studio hand photo with bare natural nails on pure black background. Your canvas.
 
 CRITICAL UNIFORMITY RULE — READ CAREFULLY:
 - Apply EXACTLY THE SAME design to EVERY SINGLE NAIL. All nails must look IDENTICAL.
@@ -99,8 +130,11 @@ CRITICAL UNIFORMITY RULE — READ CAREFULLY:
 - One hand pose = exactly 5 nails. Double-hand pose = exactly 10 nails. ALL uniform.
 - If the reference shows an accent nail, IGNORE that — apply the dominant design uniformly.
 
-Keep EVERYTHING else identical: pose, skin, background, lighting.
-No jewelry, no watermarks. Professional Dior/Chanel quality result.`;
+Keep EVERYTHING else identical: pose, skin tone, background, lighting.
+No jewelry, no rings, no accessories. No watermarks, no text.
+Professional luxury catalog photo quality — sharp, editorial, Dior/Chanel level.`;
+
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   let firstPath: string | null = null;
   let allOk = true;
@@ -114,7 +148,14 @@ No jewelry, no watermarks. Professional Dior/Chanel quality result.`;
         { inlineData: { mimeType, data: imgB64 } },
         { text: PROMPT },
       ];
-      const result = await callGemini(parts, true);
+
+      // 3 attempts with 2s delay between retries, 2.5s between bases (matches batch pipeline)
+      let result = null;
+      for (let attempt = 0; attempt < 3 && !result; attempt++) {
+        if (attempt > 0) await sleep(2000);
+        result = await callGemini(parts, true);
+      }
+
       const outPath = join(outDir, `${baseId}.jpg`);
       const relPath = `/catalog-preview/${style.id}/${baseId}.jpg`;
 
@@ -126,6 +167,7 @@ No jewelry, no watermarks. Professional Dior/Chanel quality result.`;
         await db.insert(nailStyleVariants).values({ styleId: style.id, baseId, imagePath: "", status: "error", errorMsg: "generation failed" });
         allOk = false;
       }
+      await sleep(2500);
     } catch (e) {
       await db.insert(nailStyleVariants).values({ styleId: style.id, baseId, imagePath: "", status: "error", errorMsg: e instanceof Error ? e.message : "unknown error" });
       allOk = false;

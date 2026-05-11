@@ -338,8 +338,7 @@ export function DesignOverlay({ style, onClose, onSelectDesign }: Props) {
           className="text-xs tracking-widest uppercase mb-4"
           style={{ color: "var(--caiena-rose)" }}
         >
-          {activeVariant ? (BASES_LABELS[activeVariant.baseId] ?? activeVariant.baseId) : ""}
-          {total > 1 && ` — ${poseIdx + 1} / ${total}`}
+          {total > 1 && `${poseIdx + 1} / ${total}`}
         </p>
 
         {/* Pose dots */}
