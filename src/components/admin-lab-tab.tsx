@@ -436,6 +436,17 @@ function RecentStrip({ styles, onReload }: { styles: NailStyle[]; onReload: () =
 
 // ── AI generation panel ────────────────────────────────────────────────────────
 
+const RING_R = 52;
+const RING_C = 2 * Math.PI * RING_R; // ≈ 326.73
+const ESTIMATED_SECONDS = 60; // ~15s per Gemini call × 4
+const BASES_ORDER = ["garra", "ascendente", "doble", "rocio"] as const;
+const BASES_ES: Record<string, string> = {
+  garra: "Garra",
+  ascendente: "Ascendente",
+  doble: "Doble",
+  rocio: "Rocío",
+};
+
 function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
   const t = useAdminT();
   const [file, setFile] = useState<File | null>(null);
@@ -446,7 +457,31 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
   const [variants, setVariants] = useState<Array<{ baseId: string; imagePath: string; status: string }>>([]);
   const [styleId, setStyleId] = useState<number | null>(null);
   const [publishLoading, setPublishLoading] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
+  const startTimeRef = useRef<number>(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Drive the progress ring while generating
+  useEffect(() => {
+    if (status === "generating") {
+      startTimeRef.current = Date.now();
+      intervalRef.current = setInterval(() => {
+        setElapsed((Date.now() - startTimeRef.current) / 1000);
+      }, 100);
+    } else {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (status !== "generating") setElapsed(0);
+    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [status]);
+
+  // Derived progress values
+  const progress = status === "done" ? 100 : Math.min((elapsed / ESTIMATED_SECONDS) * 90, 90);
+  const ringOffset = RING_C * (1 - progress / 100);
+  // Which image is currently being worked on (1-indexed, capped at 4)
+  const currentImage = Math.min(Math.floor(elapsed / (ESTIMATED_SECONDS / 4)) + 1, 4);
+  const timeRemaining = Math.max(0, Math.round(ESTIMATED_SECONDS - elapsed));
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -480,11 +515,10 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
     const data = await res.json();
     if (!res.ok) { setStatus("error"); return; }
     setStyleId(data.styleId);
-    setStatus(data.status === "done" ? "done" : "error");
     const statusRes = await fetch(`/api/admin/catalog/status/${data.jobId}`);
     const statusData = await statusRes.json();
     setVariants(statusData.variants ?? []);
-    // Add to recent strip immediately after generating
+    setStatus(data.status === "done" ? "done" : "error");
     onCreated();
   };
 
@@ -498,17 +532,78 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
     onCreated();
   };
 
-  const BASES_LABELS: Record<string, string> = {
-    garra: t.nailStyles.baseGarra,
-    ascendente: t.nailStyles.baseAscendente,
-    doble: t.nailStyles.baseDoble,
-    rocio: t.nailStyles.baseRocio,
-  };
+  // ── Generating state: full progress view ──
+  if (status === "generating") {
+    return (
+      <div className="flex flex-col items-center gap-6 py-4">
+        {/* SVG circular progress ring */}
+        <div className="relative w-[120px] h-[120px]">
+          <svg
+            width="120" height="120"
+            viewBox="0 0 120 120"
+            className="-rotate-90"
+            style={{ overflow: "visible" }}
+          >
+            <defs>
+              <linearGradient id="genRingGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#c084fc" />
+                <stop offset="100%" stopColor="#f472b6" />
+              </linearGradient>
+            </defs>
+            {/* Track */}
+            <circle cx="60" cy="60" r={RING_R} fill="none" stroke="#f3e8ff" strokeWidth="8" />
+            {/* Progress arc */}
+            <circle
+              cx="60" cy="60" r={RING_R}
+              fill="none"
+              stroke="url(#genRingGrad)"
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray={RING_C}
+              strokeDashoffset={ringOffset}
+              style={{ transition: "stroke-dashoffset 0.6s ease-out" }}
+            />
+          </svg>
+          {/* Center label — not rotated */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <span className="text-xl font-bold text-gray-800 leading-none">{currentImage}/4</span>
+            <span className="text-[10px] text-gray-400 mt-0.5">imágenes</span>
+          </div>
+        </div>
 
+        {/* Status text */}
+        <div className="text-center space-y-1">
+          <p className="text-sm font-medium text-gray-700">Generando variantes con IA…</p>
+          <p className="text-xs text-gray-400">
+            {timeRemaining > 0 ? `~${timeRemaining}s restantes` : "Finalizando…"}
+          </p>
+        </div>
+
+        {/* 4 shimmer skeleton cards */}
+        <div className="grid grid-cols-4 gap-2 w-full">
+          {BASES_ORDER.map((baseId, i) => (
+            <div key={baseId} className="space-y-1">
+              <div
+                className={`aspect-[2/3] rounded-lg ${
+                  i < currentImage - 1
+                    ? "bg-purple-100 animate-pulse"
+                    : "bg-gray-100 animate-pulse"
+                }`}
+                style={{ animationDelay: `${i * 150}ms` }}
+              />
+              <p className="text-[10px] text-center text-gray-400">{BASES_ES[baseId]}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Idle / done / error state ──
   return (
     <div className="space-y-5">
       <div className="flex gap-4 items-center">
-        {/* Photo picker — bigger */}
+        {/* Photo picker */}
         <div
           className="relative w-32 aspect-[2/3] rounded-xl border-2 border-dashed border-accent-light/40 flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors overflow-hidden flex-shrink-0"
           onClick={() => fileRef.current?.click()}
@@ -531,10 +626,10 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
         {/* Generate button */}
         <button
           onClick={handleGenerate}
-          disabled={!file || classifying || status === "generating"}
+          disabled={!file || classifying}
           className="px-5 py-2.5 bg-foreground text-white text-sm rounded-xl hover:bg-accent-dark transition-colors disabled:opacity-40 whitespace-nowrap font-medium"
         >
-          {status === "generating" ? t.nailStyles.generating : t.nailStyles.generate4}
+          {t.nailStyles.generate4}
         </button>
       </div>
       <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
@@ -548,7 +643,7 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
                 <div className="aspect-[2/3] rounded-lg overflow-hidden bg-cream">
                   <img src={v.imagePath} alt={v.baseId} className="w-full h-full object-cover" />
                 </div>
-                <p className="text-[10px] text-center text-foreground/50">{BASES_LABELS[v.baseId] ?? v.baseId}</p>
+                <p className="text-[10px] text-center text-foreground/50">{BASES_ES[v.baseId] ?? v.baseId}</p>
               </div>
             ))}
           </div>
