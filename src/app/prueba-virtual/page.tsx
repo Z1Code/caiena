@@ -1,14 +1,19 @@
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { AITryOn } from "@/components/ai-tryon";
+import { getLocale } from "@/i18n/locale";
+import { getT } from "@/i18n";
 
 export const metadata = {
   title: "Prueba Virtual con IA | Caiena Beauty Nails",
   description:
-    "Prueba diferentes disenos de unas en tu propia mano usando inteligencia artificial.",
+    "Prueba diferentes diseños de uñas en tu propia mano usando inteligencia artificial.",
 };
 
-export default function PruebaVirtualPage() {
+export default async function PruebaVirtualPage() {
+  const locale = await getLocale();
+  const t = getT(locale).tryon;
+
   return (
     <>
       <Navbar />
@@ -16,14 +21,13 @@ export default function PruebaVirtualPage() {
         <div className="max-w-2xl mx-auto px-4">
           <div className="text-center mb-10">
             <p className="text-accent-dark tracking-[0.3em] uppercase text-xs mb-3">
-              Inteligencia Artificial
+              {t.label}
             </p>
             <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-foreground">
-              Prueba Virtual
+              {t.heading}
             </h1>
             <p className="text-foreground/50 mt-3 max-w-md mx-auto">
-              Sube una foto de tu mano y prueba diferentes disenos con IA antes
-              de tu cita.
+              {t.sub}
             </p>
             <div className="w-16 h-px bg-accent mx-auto mt-4" />
           </div>

@@ -72,6 +72,26 @@ const dict = {
       label: "Agenda tu Cita",
       heading: "Reservar",
     },
+    catalog: {
+      label: "Catálogo",
+      heading: "Diseños de Uñas",
+      sub: "Filtra por estilo, color o forma. Sube tu foto y prueba cualquier diseño en tu mano.",
+    },
+    generator: {
+      label: "Inteligencia Artificial",
+      heading: "Generador de Diseños",
+      sub: "Describe el diseño de tus sueños y nuestra IA lo creará para ti.",
+    },
+    tryon: {
+      label: "Inteligencia Artificial",
+      heading: "Prueba Virtual",
+      sub: "Sube una foto de tu mano y prueba diferentes diseños con IA antes de tu cita.",
+    },
+    giftCards: {
+      label: "El Regalo Perfecto",
+      heading: "Gift Cards",
+      sub: "Regala una experiencia de belleza a alguien especial.",
+    },
     lang: {
       switchTo: "EN",
       current: "ES",
@@ -147,6 +167,26 @@ const dict = {
     booking: {
       label: "Book your Appointment",
       heading: "Book",
+    },
+    catalog: {
+      label: "Catalog",
+      heading: "Nail Designs",
+      sub: "Filter by style, color, or shape. Upload your photo and try any design on your hand.",
+    },
+    generator: {
+      label: "Artificial Intelligence",
+      heading: "Design Generator",
+      sub: "Describe your dream design and our AI will create it for you.",
+    },
+    tryon: {
+      label: "Artificial Intelligence",
+      heading: "Virtual Try-On",
+      sub: "Upload a photo of your hand and try different designs with AI before your appointment.",
+    },
+    giftCards: {
+      label: "The Perfect Gift",
+      heading: "Gift Cards",
+      sub: "Give someone special a beauty experience.",
     },
     lang: {
       switchTo: "ES",
