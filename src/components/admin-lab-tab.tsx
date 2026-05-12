@@ -438,7 +438,6 @@ function RecentStrip({ styles, onReload }: { styles: NailStyle[]; onReload: () =
 
 const RING_R = 52;
 const RING_C = 2 * Math.PI * RING_R; // ≈ 326.73
-const ESTIMATED_SECONDS = 60; // ~15s per Gemini call × 4
 const BASES_ORDER = ["garra", "ascendente", "doble", "rocio"] as const;
 const BASES_ES: Record<string, string> = {
   garra: "Garra",
@@ -457,31 +456,13 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
   const [variants, setVariants] = useState<Array<{ baseId: string; imagePath: string; status: string }>>([]);
   const [styleId, setStyleId] = useState<number | null>(null);
   const [publishLoading, setPublishLoading] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
+  // Real progress: number of images confirmed received (0–4)
+  const [completedCount, setCompletedCount] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
-  const startTimeRef = useRef<number>(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Drive the progress ring while generating
-  useEffect(() => {
-    if (status === "generating") {
-      startTimeRef.current = Date.now();
-      intervalRef.current = setInterval(() => {
-        setElapsed((Date.now() - startTimeRef.current) / 1000);
-      }, 100);
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      setElapsed(0);
-    }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [status]);
-
-  // Derived progress values
-  const progress = status === "done" ? 100 : Math.min((elapsed / ESTIMATED_SECONDS) * 90, 90);
+  // Real progress: each completed image = 25% — no time estimation needed
+  const progress = completedCount * 25;
   const ringOffset = RING_C * (1 - progress / 100);
-  // Which image is currently being worked on (1-indexed, capped at 4)
-  const currentImage = Math.min(Math.floor(elapsed / (ESTIMATED_SECONDS / 4)) + 1, 4);
-  const timeRemaining = Math.max(0, Math.round(ESTIMATED_SECONDS - elapsed));
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -508,18 +489,49 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
     if (!file) return;
     setStatus("generating");
     setVariants([]);
+    setCompletedCount(0);
+
     const form = new FormData();
     form.append("image", file);
     form.append("name", name || file.name.replace(/\.\w+$/, ""));
+
     const res = await fetch("/api/admin/catalog/generate", { method: "POST", body: form });
-    const data = await res.json();
-    if (!res.ok) { setStatus("error"); return; }
-    setStyleId(data.styleId);
-    const statusRes = await fetch(`/api/admin/catalog/status/${data.jobId}`);
-    const statusData = await statusRes.json();
-    setVariants(statusData.variants ?? []);
-    setStatus(data.status === "done" ? "done" : "error");
-    onCreated();
+    if (!res.ok || !res.body) { setStatus("error"); return; }
+
+    // Read the SSE stream — each event arrives as an image completes on the server
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        // Split on newlines; keep the last (possibly incomplete) chunk
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const event = JSON.parse(line.slice(6));
+            if (event.type === "init") {
+              setStyleId(event.styleId);
+            } else if (event.type === "progress" && event.imagePath) {
+              setVariants((prev) => [...prev, { baseId: event.baseId, imagePath: event.imagePath, status: "done" }]);
+              setCompletedCount(event.completed);
+            } else if (event.type === "done") {
+              setStatus(event.status === "done" ? "done" : "error");
+              onCreated();
+            }
+          } catch { /* ignore malformed line */ }
+        }
+      }
+    } catch {
+      setStatus("error");
+    }
   };
 
   const handlePublish = async () => {
@@ -528,22 +540,17 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
     await fetch(`/api/admin/catalog/publish/${styleId}`, { method: "POST" });
     setPublishLoading(false);
     alert("Diseño publicado. Aparecerá en el carrusel.");
-    setStatus("idle"); setFile(null); setPreview(null); setName(""); setVariants([]); setStyleId(null);
+    setStatus("idle"); setFile(null); setPreview(null); setName(""); setVariants([]); setStyleId(null); setCompletedCount(0);
     onCreated();
   };
 
-  // ── Generating state: full progress view ──
+  // ── Generating state: real-time progress ring ──
   if (status === "generating") {
     return (
       <div className="flex flex-col items-center gap-6 py-4">
         {/* SVG circular progress ring */}
         <div className="relative w-[120px] h-[120px]">
-          <svg
-            width="120" height="120"
-            viewBox="0 0 120 120"
-            className="-rotate-90"
-            style={{ overflow: "visible" }}
-          >
+          <svg width="120" height="120" viewBox="0 0 120 120" className="-rotate-90">
             <defs>
               <linearGradient id="genRingGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="#c084fc" />
@@ -552,7 +559,7 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
             </defs>
             {/* Track */}
             <circle cx="60" cy="60" r={RING_R} fill="none" stroke="#f3e8ff" strokeWidth="8" />
-            {/* Progress arc */}
+            {/* Progress arc — jumps exactly 25% per completed image */}
             <circle
               cx="60" cy="60" r={RING_R}
               fill="none"
@@ -561,39 +568,45 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
               strokeLinecap="round"
               strokeDasharray={RING_C}
               strokeDashoffset={ringOffset}
-              style={{ transition: "stroke-dashoffset 0.6s ease-out" }}
+              style={{ transition: "stroke-dashoffset 0.5s ease-out" }}
             />
           </svg>
-          {/* Center label — not rotated */}
+          {/* Center label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-xl font-bold text-gray-800 leading-none">{currentImage}/4</span>
-            <span className="text-[10px] text-gray-400 mt-0.5">imágenes</span>
+            <span className="text-xl font-bold text-gray-800 leading-none">{completedCount}/4</span>
+            <span className="text-[10px] text-gray-400 mt-0.5">listas</span>
           </div>
         </div>
 
         {/* Status text */}
-        <div className="text-center space-y-1">
-          <p className="text-sm font-medium text-gray-700">Generando variantes con IA…</p>
-          <p className="text-xs text-gray-400">
-            {timeRemaining > 0 ? `~${timeRemaining}s restantes` : "Finalizando…"}
-          </p>
-        </div>
+        <p className="text-sm text-gray-500">
+          {completedCount === 0
+            ? "Preparando generación…"
+            : completedCount < 4
+            ? `Imagen ${completedCount + 1} de 4 en proceso…`
+            : "Finalizando…"}
+        </p>
 
-        {/* 4 shimmer skeleton cards */}
+        {/* Cards: shimmer until image arrives, then show real photo */}
         <div className="grid grid-cols-4 gap-2 w-full">
-          {BASES_ORDER.map((baseId, i) => (
-            <div key={baseId} className="space-y-1">
-              <div
-                className={`aspect-[2/3] rounded-lg ${
-                  i < currentImage - 1
-                    ? "bg-purple-100 animate-pulse"
-                    : "bg-gray-100 animate-pulse"
-                }`}
-                style={{ animationDelay: `${i * 150}ms` }}
-              />
-              <p className="text-[10px] text-center text-gray-400">{BASES_ES[baseId]}</p>
-            </div>
-          ))}
+          {BASES_ORDER.map((baseId, i) => {
+            const v = variants.find((v) => v.baseId === baseId);
+            return (
+              <div key={baseId} className="space-y-1">
+                {v?.imagePath ? (
+                  <div className="aspect-[2/3] rounded-lg overflow-hidden">
+                    <img src={v.imagePath} alt={BASES_ES[baseId]} className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div
+                    className="aspect-[2/3] rounded-lg bg-gray-100 animate-pulse"
+                    style={{ animationDelay: `${i * 120}ms` }}
+                  />
+                )}
+                <p className="text-[10px] text-center text-gray-400">{BASES_ES[baseId]}</p>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
