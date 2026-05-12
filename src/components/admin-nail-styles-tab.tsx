@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useAdminT } from "@/components/admin-locale-context";
 
 interface NailStyle {
@@ -20,20 +21,6 @@ interface NailStyle {
   sortOrder: number;
 }
 
-interface StyleForm {
-  name: string;
-  description: string;
-  category: string;
-  prompt: string;
-  color: string;
-  acabado: string;
-  forma: string;
-  estilo: string;
-  badge: string;
-  discountPercent: string;
-  sortOrder: number;
-}
-
 const CATEGORIES = [
   { value: "french", label: "French" },
   { value: "gel", label: "Gel" },
@@ -43,61 +30,6 @@ const CATEGORIES = [
   { value: "bold", label: "Bold" },
   { value: "seasonal", label: "Temporada" },
 ];
-
-const ESTILOS = [
-  { value: "", label: "Sin especificar" },
-  { value: "french", label: "French" },
-  { value: "solid", label: "Sólido" },
-  { value: "floral", label: "Floral" },
-  { value: "geometrico", label: "Geométrico" },
-  { value: "glitter_foil", label: "Glitter / Foil" },
-  { value: "ombre", label: "Ombre" },
-  { value: "chrome", label: "Chrome" },
-  { value: "minimalista", label: "Minimalista" },
-  { value: "nail_art", label: "Nail Art" },
-];
-
-const COLORES = [
-  { value: "", label: "Sin especificar" },
-  { value: "nude", label: "Nude" }, { value: "rosa", label: "Rosa" },
-  { value: "rojo", label: "Rojo" }, { value: "burdeos", label: "Burdeos" },
-  { value: "blanco", label: "Blanco" }, { value: "negro", label: "Negro" },
-  { value: "azul", label: "Azul" }, { value: "verde", label: "Verde" },
-  { value: "morado", label: "Morado" }, { value: "lila", label: "Lila" },
-  { value: "coral", label: "Coral" }, { value: "amarillo", label: "Amarillo" },
-  { value: "naranja", label: "Naranja" }, { value: "multicolor", label: "Multicolor" },
-  { value: "plateado", label: "Plateado" }, { value: "dorado", label: "Dorado" },
-  { value: "gris", label: "Gris" }, { value: "beige", label: "Beige" },
-];
-
-const ACABADOS = [
-  { value: "", label: "Sin especificar" },
-  { value: "glossy", label: "Glossy" }, { value: "matte", label: "Matte" },
-  { value: "chrome", label: "Chrome" }, { value: "glitter", label: "Glitter" },
-  { value: "satinado", label: "Satinado" },
-];
-
-const FORMAS = [
-  { value: "", label: "Sin especificar" },
-  { value: "cuadrada", label: "Cuadrada" }, { value: "redonda", label: "Redonda" },
-  { value: "oval", label: "Oval" }, { value: "almendra", label: "Almendra" },
-  { value: "stiletto", label: "Stiletto" }, { value: "coffin", label: "Coffin" },
-];
-
-const BADGES = [
-  { value: "", label: "Sin badge" },
-  { value: "Nuevo", label: "Nuevo" },
-  { value: "Promo", label: "Promo" },
-  { value: "Temporada", label: "Temporada" },
-  { value: "Popular", label: "Popular" },
-  { value: "Limitado", label: "Limitado" },
-];
-
-const EMPTY_FORM: StyleForm = {
-  name: "", description: "", category: "french", prompt: "",
-  color: "", acabado: "", forma: "", estilo: "",
-  badge: "", discountPercent: "", sortOrder: 0,
-};
 
 const BADGE_COLORS: Record<string, string> = {
   Nuevo: "bg-emerald-500",
@@ -111,11 +43,7 @@ export function AdminNailStylesTab() {
   const t = useAdminT();
   const [styles, setStyles] = useState<NailStyle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<NailStyle | null>(null);
-  const [form, setForm] = useState<StyleForm>(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
 
-  // Image upload for existing styles
   const [uploadingId, setUploadingId] = useState<number | null>(null);
   const [imageTargetId, setImageTargetId] = useState<number | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -127,31 +55,6 @@ export function AdminNailStylesTab() {
   }
 
   useEffect(() => { load(); }, []);
-
-  async function handleSave() {
-    if (!editing) return;
-    setSaving(true);
-    try {
-      const payload = {
-        ...form,
-        discountPercent: form.discountPercent !== "" ? parseInt(form.discountPercent) : null,
-        color: form.color || null,
-        acabado: form.acabado || null,
-        forma: form.forma || null,
-        estilo: form.estilo || null,
-        badge: form.badge || null,
-      };
-      await fetch(`/api/admin/nail-styles/${editing.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      cancelForm();
-      await load();
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function handleToggleActive(style: NailStyle) {
     await fetch(`/api/admin/nail-styles/${style.id}`, {
@@ -166,28 +69,6 @@ export function AdminNailStylesTab() {
     if (!confirm(t.nailStyles.deleteConfirm.replace("{name}", style.name))) return;
     await fetch(`/api/admin/nail-styles/${style.id}`, { method: "DELETE" });
     await load();
-  }
-
-  function startEdit(style: NailStyle) {
-    setEditing(style);
-    setForm({
-      name: style.name,
-      description: style.description,
-      category: style.category,
-      prompt: style.prompt,
-      color: style.color ?? "",
-      acabado: style.acabado ?? "",
-      forma: style.forma ?? "",
-      estilo: style.estilo ?? "",
-      badge: style.badge ?? "",
-      discountPercent: style.discountPercent != null ? String(style.discountPercent) : "",
-      sortOrder: style.sortOrder,
-    });
-  }
-
-  function cancelForm() {
-    setEditing(null);
-    setForm(EMPTY_FORM);
   }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -214,159 +95,6 @@ export function AdminNailStylesTab() {
       <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
 
       <h2 className="text-lg font-medium text-gray-800">{t.nailStyles.title}</h2>
-
-      {/* ── Edit Form ────────────────────────────────────────────────────── */}
-      {editing && (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-5">
-          <h3 className="font-medium text-gray-700">{t.nailStyles.editTitle}</h3>
-
-          {/* Name + Category */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.name}</label>
-              <input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                placeholder="French Clásico Nude"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.category}</label>
-              <select
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.description}</label>
-            <input
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-              placeholder="Elegante y atemporal"
-            />
-          </div>
-
-          {/* Classification fields */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.style}</label>
-              <select
-                value={form.estilo}
-                onChange={(e) => setForm({ ...form, estilo: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-              >
-                {ESTILOS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.color}</label>
-              <select
-                value={form.color}
-                onChange={(e) => setForm({ ...form, color: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-              >
-                {COLORES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.finish}</label>
-              <select
-                value={form.acabado}
-                onChange={(e) => setForm({ ...form, acabado: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-              >
-                {ACABADOS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.shape}</label>
-              <select
-                value={form.forma}
-                onChange={(e) => setForm({ ...form, forma: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-              >
-                {FORMAS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* Badge + discount + sortOrder */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.badge}</label>
-              <select
-                value={form.badge}
-                onChange={(e) => setForm({ ...form, badge: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-              >
-                {BADGES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.discount}</label>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={form.discountPercent}
-                onChange={(e) => setForm({ ...form, discountPercent: e.target.value })}
-                placeholder="0"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.order}</label>
-              <input
-                type="number"
-                value={form.sortOrder}
-                onChange={(e) => setForm({ ...form, sortOrder: parseInt(e.target.value) || 0 })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-              />
-            </div>
-          </div>
-
-          {/* Prompt */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">
-              {t.nailStyles.aiPrompt}{" "}
-              <span className="text-gray-400 font-normal">({t.nailStyles.aiPromptDesc})</span>
-            </label>
-            <textarea
-              value={form.prompt}
-              onChange={(e) => setForm({ ...form, prompt: e.target.value })}
-              rows={3}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none"
-              placeholder="classic french manicure with white tips and natural pink base, clean crisp lines, glossy finish"
-            />
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={handleSave}
-              disabled={saving || !form.name || !form.prompt}
-              className="px-5 py-2 bg-accent text-white rounded-lg text-sm hover:bg-accent-dark disabled:opacity-50 transition-colors"
-            >
-              {saving ? t.nailStyles.saving : t.nailStyles.save}
-            </button>
-            <button
-              onClick={cancelForm}
-              className="px-5 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-100 transition-colors"
-            >
-              {t.nailStyles.cancel}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ── Styles grid ──────────────────────────────────────────────────── */}
       {styles.length === 0 ? (
@@ -433,15 +161,16 @@ export function AdminNailStylesTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
-                    <button
-                      onClick={() => startEdit(style)}
+                    {/* Edit → navigate to dedicated page */}
+                    <Link
+                      href={`/dashboard/catalog/${style.id}`}
                       className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
                       title={t.nailStyles.edit}
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
                       </svg>
-                    </button>
+                    </Link>
                     <button
                       onClick={() => handleToggleActive(style)}
                       className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
