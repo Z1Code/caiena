@@ -471,7 +471,7 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
       }, 100);
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current);
-      if (status !== "generating") setElapsed(0);
+      setElapsed(0);
     }
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [status]);
