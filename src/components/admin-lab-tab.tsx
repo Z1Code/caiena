@@ -504,17 +504,21 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-3 items-start">
+    <div className="space-y-5">
+      {/* Photo + name + button — single row */}
+      <div className="flex gap-3 items-center">
+        {/* Photo picker */}
         <div
-          className="w-24 h-32 rounded-xl border-2 border-dashed border-accent-light/40 flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors overflow-hidden flex-shrink-0"
+          className="w-20 h-28 rounded-xl border-2 border-dashed border-accent-light/40 flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors overflow-hidden flex-shrink-0"
           onClick={() => fileRef.current?.click()}
         >
           {preview ? <img src={preview} alt="preview" className="w-full h-full object-cover" /> : (
-            <span className="text-xs text-foreground/30 text-center px-1">+ {t.nailStyles.referencePhoto}</span>
+            <span className="text-[10px] text-foreground/30 text-center px-1 leading-tight">+ {t.nailStyles.referencePhoto}</span>
           )}
         </div>
-        <div className="flex-1 space-y-3">
+
+        {/* Name + button */}
+        <div className="flex flex-col gap-2 flex-1 min-w-0">
           <div className="relative">
             <input
               type="text"
@@ -533,7 +537,7 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
           <button
             onClick={handleGenerate}
             disabled={!file || status === "generating"}
-            className="w-full bg-foreground text-white text-sm py-2.5 rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50"
+            className="self-start px-5 py-2 bg-foreground text-white text-sm rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50 whitespace-nowrap"
           >
             {status === "generating" ? t.nailStyles.generating : t.nailStyles.generate4}
           </button>
@@ -557,7 +561,7 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
           <button
             onClick={handlePublish}
             disabled={publishLoading}
-            className="w-full bg-emerald-600 text-white text-sm py-2.5 rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+            className="px-6 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
           >
             {publishLoading ? t.nailStyles.publishing : t.nailStyles.publish}
           </button>
