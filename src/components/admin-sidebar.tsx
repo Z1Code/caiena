@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
+import { setLocaleCookie } from "@/i18n/locale";
+import { getClientLocale } from "@/i18n";
 
 const NAV_ITEMS = [
   {
@@ -98,6 +100,49 @@ const USERS_ITEM = {
   ),
 };
 
+function LocaleSwitcher() {
+  const [pending, startTransition] = useTransition();
+  const [locale, setLocale] = useState<"es" | "en">("es");
+
+  useEffect(() => {
+    setLocale(getClientLocale());
+  }, []);
+
+  function switchTo(next: "es" | "en") {
+    if (next === locale || pending) return;
+    startTransition(async () => {
+      await setLocaleCookie(next);
+      setLocale(next);
+      window.location.reload();
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-1 px-3 py-2">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-4 h-4 text-gray-400 shrink-0">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      </svg>
+      <div className="flex rounded-lg overflow-hidden border border-gray-200 ml-1">
+        {(["es", "en"] as const).map((lang) => (
+          <button
+            key={lang}
+            onClick={() => switchTo(lang)}
+            disabled={pending}
+            className={`px-2.5 py-1 text-xs font-medium uppercase tracking-wide transition-colors disabled:opacity-50 ${
+              locale === lang
+                ? "bg-[var(--accent)] text-white"
+                : "text-gray-500 hover:bg-gray-100"
+            }`}
+          >
+            {lang}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function AdminSidebar({ canManageUsers }: { canManageUsers: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -151,6 +196,7 @@ export function AdminSidebar({ canManageUsers }: { canManageUsers: boolean }) {
 
       {/* Footer actions */}
       <div className="px-4 py-4 border-t border-gray-100 space-y-1">
+        <LocaleSwitcher />
         <a
           href="/"
           className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors"
