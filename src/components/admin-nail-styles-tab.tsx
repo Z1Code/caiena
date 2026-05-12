@@ -99,12 +99,19 @@ const EMPTY_FORM: StyleForm = {
   badge: "", discountPercent: "", sortOrder: 0,
 };
 
+const BADGE_COLORS: Record<string, string> = {
+  Nuevo: "bg-emerald-500",
+  Promo: "bg-red-500",
+  Temporada: "bg-purple-500",
+  Popular: "bg-orange-500",
+  Limitado: "bg-gray-800",
+};
+
 export function AdminNailStylesTab() {
   const t = useAdminT();
   const [styles, setStyles] = useState<NailStyle[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<NailStyle | null>(null);
-  const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<StyleForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
@@ -112,12 +119,6 @@ export function AdminNailStylesTab() {
   const [uploadingId, setUploadingId] = useState<number | null>(null);
   const [imageTargetId, setImageTargetId] = useState<number | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
-
-  // Create-form image + auto-classify
-  const [createPreview, setCreatePreview] = useState<string | null>(null);
-  const [createImageFile, setCreateImageFile] = useState<File | null>(null);
-  const [classifying, setClassifying] = useState(false);
-  const classifyInputRef = useRef<HTMLInputElement>(null);
 
   async function load() {
     const res = await fetch("/api/admin/nail-styles");
@@ -127,47 +128,8 @@ export function AdminNailStylesTab() {
 
   useEffect(() => { load(); }, []);
 
-  // ─── Classify a new image (create flow) ────────────────────────────────────
-
-  async function handleClassifyImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Show preview
-    const reader = new FileReader();
-    reader.onloadend = () => setCreatePreview(reader.result as string);
-    reader.readAsDataURL(file);
-    setCreateImageFile(file);
-
-    setClassifying(true);
-    try {
-      const formData = new FormData();
-      formData.append("image", file);
-      const res = await fetch("/api/admin/nail-styles/classify", { method: "POST", body: formData });
-      if (!res.ok) throw new Error("classify failed");
-      const data = await res.json();
-      setForm((f) => ({
-        ...f,
-        name: data.name ?? f.name,
-        description: data.description ?? f.description,
-        category: data.category ?? f.category,
-        estilo: data.estilo ?? f.estilo,
-        color: data.color ?? f.color,
-        acabado: data.acabado ?? f.acabado,
-        forma: data.forma ?? f.forma,
-        prompt: data.prompt ?? f.prompt,
-      }));
-    } catch {
-      // If classify fails, user fills manually — no error shown
-    } finally {
-      setClassifying(false);
-      e.target.value = "";
-    }
-  }
-
-  // ─── Save (create or edit) ─────────────────────────────────────────────────
-
   async function handleSave() {
+    if (!editing) return;
     setSaving(true);
     try {
       const payload = {
@@ -179,29 +141,11 @@ export function AdminNailStylesTab() {
         estilo: form.estilo || null,
         badge: form.badge || null,
       };
-
-      if (editing) {
-        await fetch(`/api/admin/nail-styles/${editing.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      } else {
-        // Create style first, then upload image if provided
-        const res = await fetch("/api/admin/nail-styles", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const created = await res.json();
-
-        if (createImageFile && created.id) {
-          const imgForm = new FormData();
-          imgForm.append("image", createImageFile);
-          await fetch(`/api/admin/nail-styles/${created.id}/image`, { method: "POST", body: imgForm });
-        }
-      }
-
+      await fetch(`/api/admin/nail-styles/${editing.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       cancelForm();
       await load();
     } finally {
@@ -226,9 +170,6 @@ export function AdminNailStylesTab() {
 
   function startEdit(style: NailStyle) {
     setEditing(style);
-    setCreating(false);
-    setCreatePreview(null);
-    setCreateImageFile(null);
     setForm({
       name: style.name,
       description: style.description,
@@ -244,23 +185,10 @@ export function AdminNailStylesTab() {
     });
   }
 
-  function startCreate() {
-    setCreating(true);
-    setEditing(null);
-    setCreatePreview(null);
-    setCreateImageFile(null);
-    setForm(EMPTY_FORM);
-  }
-
   function cancelForm() {
     setEditing(null);
-    setCreating(false);
-    setCreatePreview(null);
-    setCreateImageFile(null);
     setForm(EMPTY_FORM);
   }
-
-  // ─── Image upload for existing styles ──────────────────────────────────────
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     if (!imageTargetId || !e.target.files?.[0]) return;
@@ -281,75 +209,16 @@ export function AdminNailStylesTab() {
 
   if (loading) return <div className="py-8 text-center text-gray-400 text-sm">{t.nailStyles.loading}</div>;
 
-  const showForm = creating || editing !== null;
-
   return (
     <div className="space-y-6">
-      {/* ── Generate from reference image ── */}
-      <div className="mb-8 p-5 rounded-2xl border border-accent-light/30 bg-cream/30">
-        <h3 className="font-serif text-base font-semibold mb-4">{t.nailStyles.generateVariants}</h3>
-        <GenerateVariantsPanel />
-      </div>
-
-      {/* Hidden inputs */}
       <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-      <input ref={classifyInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleClassifyImage} className="hidden" />
 
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-medium text-gray-800">{t.nailStyles.title}</h2>
-        {!showForm && (
-          <button
-            onClick={startCreate}
-            className="px-4 py-2 bg-accent text-white rounded-lg text-sm hover:bg-accent-dark transition-colors"
-          >
-            + {t.nailStyles.addNew}
-          </button>
-        )}
-      </div>
+      <h2 className="text-lg font-medium text-gray-800">{t.nailStyles.title}</h2>
 
-      {/* ── Form ─────────────────────────────────────────────────────────── */}
-      {showForm && (
+      {/* ── Edit Form ────────────────────────────────────────────────────── */}
+      {editing && (
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-5">
-          <h3 className="font-medium text-gray-700">{editing ? t.nailStyles.editTitle : t.nailStyles.addNew}</h3>
-
-          {/* Image + auto-classify (create only) */}
-          {!editing && (
-            <div>
-              <p className="text-xs text-gray-500 mb-2">
-                {t.nailStyles.uploadPhoto}{" "}
-                <span className="text-gray-400 font-normal">— {t.nailStyles.aiAutoDetect}</span>
-              </p>
-              <div className="flex items-start gap-4">
-                <div
-                  className="relative w-32 h-32 rounded-xl border-2 border-dashed border-gray-200 overflow-hidden cursor-pointer flex-shrink-0 hover:border-accent/50 transition-colors"
-                  onClick={() => classifyInputRef.current?.click()}
-                >
-                  {createPreview ? (
-                    <img src={createPreview} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-gray-300">
-                      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 5.75 5.75 0 011.023 10.9" />
-                      </svg>
-                      <span className="text-[10px]">{t.nailStyles.selectFile}</span>
-                    </div>
-                  )}
-                  {classifying && (
-                    <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center gap-2">
-                      <div className="w-5 h-5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-                      <span className="text-[10px] text-accent-dark">{t.nailStyles.analyzing}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="text-xs text-gray-400 pt-2 space-y-1">
-                  <p>{t.nailStyles.step1}</p>
-                  <p>{t.nailStyles.step2}</p>
-                  <p>{t.nailStyles.step3}</p>
-                  <p>{t.nailStyles.step4}</p>
-                </div>
-              </div>
-            </div>
-          )}
+          <h3 className="font-medium text-gray-700">{t.nailStyles.editTitle}</h3>
 
           {/* Name + Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -500,7 +369,7 @@ export function AdminNailStylesTab() {
       )}
 
       {/* ── Styles grid ──────────────────────────────────────────────────── */}
-      {styles.length === 0 && !showForm ? (
+      {styles.length === 0 ? (
         <div className="py-12 text-center text-gray-400 text-sm">
           {t.nailStyles.noData}
         </div>
@@ -529,7 +398,6 @@ export function AdminNailStylesTab() {
                     {t.nailStyles.selectFile}
                   </div>
                 )}
-                {/* Badge overlay */}
                 {style.badge && (
                   <div className={`absolute top-2 left-2 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full ${BADGE_COLORS[style.badge] ?? "bg-gray-600"}`}>
                     {style.badge}
@@ -610,146 +478,6 @@ export function AdminNailStylesTab() {
             </div>
           ))}
         </div>
-      )}
-    </div>
-  );
-}
-
-const BADGE_COLORS: Record<string, string> = {
-  Nuevo: "bg-emerald-500",
-  Promo: "bg-red-500",
-  Temporada: "bg-purple-500",
-  Popular: "bg-orange-500",
-  Limitado: "bg-gray-800",
-};
-
-function GenerateVariantsPanel() {
-  const t = useAdminT();
-  const [file, setFile] = useState<File | null>(null);
-  const [name, setName] = useState("");
-  const [classifying, setClassifying] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [status, setStatus] = useState<"idle" | "generating" | "done" | "error">("idle");
-  const [variants, setVariants] = useState<Array<{ baseId: string; imagePath: string; status: string }>>([]);
-  const [styleId, setStyleId] = useState<number | null>(null);
-  const [publishLoading, setPublishLoading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    setFile(f);
-    setName("");
-    const reader = new FileReader();
-    reader.onloadend = () => setPreview(reader.result as string);
-    reader.readAsDataURL(f);
-
-    // Auto-classify to get name
-    setClassifying(true);
-    try {
-      const fd = new FormData();
-      fd.append("image", f);
-      const res = await fetch("/api/admin/nail-styles/classify", { method: "POST", body: fd });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.name) setName(data.name);
-      }
-    } catch { /* user can type manually */ }
-    finally { setClassifying(false); }
-  };
-
-  const handleGenerate = async () => {
-    if (!file) return;
-    setStatus("generating");
-    setVariants([]);
-    const form = new FormData();
-    form.append("image", file);
-    form.append("name", name || file.name.replace(/\.\w+$/, ""));
-    const res = await fetch("/api/admin/catalog/generate", { method: "POST", body: form });
-    const data = await res.json();
-    if (!res.ok) { setStatus("error"); return; }
-    setStyleId(data.styleId);
-    setStatus(data.status === "done" ? "done" : "error");
-    // Fetch variants
-    const statusRes = await fetch(`/api/admin/catalog/status/${data.jobId}`);
-    const statusData = await statusRes.json();
-    setVariants(statusData.variants ?? []);
-  };
-
-  const handlePublish = async () => {
-    if (!styleId) return;
-    setPublishLoading(true);
-    await fetch(`/api/admin/catalog/publish/${styleId}`, { method: "POST" });
-    setPublishLoading(false);
-    alert("Diseño publicado. Aparecerá en el carrusel.");
-    setStatus("idle"); setFile(null); setPreview(null); setName(""); setVariants([]); setStyleId(null);
-  };
-
-  const BASES_LABELS: Record<string, string> = { garra: t.nailStyles.baseGarra, ascendente: t.nailStyles.baseAscendente, doble: t.nailStyles.baseDoble, rocio: t.nailStyles.baseRocio };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-3 items-start">
-        <div
-          className="w-24 h-32 rounded-xl border-2 border-dashed border-accent-light/40 flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors overflow-hidden flex-shrink-0"
-          onClick={() => fileRef.current?.click()}
-        >
-          {preview ? <img src={preview} alt="preview" className="w-full h-full object-cover" /> : (
-            <span className="text-xs text-foreground/30 text-center px-1">+ {t.nailStyles.referencePhoto}</span>
-          )}
-        </div>
-        <div className="flex-1 space-y-3">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder={classifying ? t.nailStyles.analyzingDesign : t.nailStyles.designName}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={classifying}
-              className="w-full text-sm border border-accent-light/30 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-accent/50 disabled:bg-gray-50 disabled:text-gray-400 pr-8"
-            />
-            {classifying && (
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                <div className="w-3.5 h-3.5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-              </div>
-            )}
-          </div>
-          <button
-            onClick={handleGenerate}
-            disabled={!file || status === "generating"}
-            className="w-full bg-foreground text-white text-sm py-2.5 rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50"
-          >
-            {status === "generating" ? t.nailStyles.generating : t.nailStyles.generate4}
-          </button>
-        </div>
-      </div>
-      <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
-
-      {status === "done" && variants.length > 0 && (
-        <div>
-          <p className="text-xs text-foreground/50 mb-3">{t.nailStyles.generated}</p>
-          <div className="grid grid-cols-4 gap-2 mb-4">
-            {variants.filter(v => v.status === "done" && v.imagePath).map((v) => (
-              <div key={v.baseId} className="space-y-1">
-                <div className="aspect-[2/3] rounded-lg overflow-hidden bg-cream">
-                  <img src={v.imagePath} alt={v.baseId} className="w-full h-full object-cover" />
-                </div>
-                <p className="text-[10px] text-center text-foreground/50">{BASES_LABELS[v.baseId] ?? v.baseId}</p>
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={handlePublish}
-            disabled={publishLoading}
-            className="w-full bg-emerald-600 text-white text-sm py-2.5 rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
-          >
-            {publishLoading ? t.nailStyles.publishing : t.nailStyles.publish}
-          </button>
-        </div>
-      )}
-
-      {status === "error" && (
-        <p className="text-sm text-red-600">{t.nailStyles.errorGenerating}</p>
       )}
     </div>
   );

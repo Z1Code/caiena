@@ -78,6 +78,16 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: "/dashboard/lab",
+    navKey: "lab" as const,
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-5 h-5">
+        <path d="M9 3h6M9 3v7l-4 8a1 1 0 0 0 .9 1.45h12.2A1 1 0 0 0 19 18l-4-8V3" />
+        <path d="M7 14h10" />
+      </svg>
+    ),
+  },
+  {
     href: "/dashboard/site",
     navKey: "site" as const,
     icon: (
