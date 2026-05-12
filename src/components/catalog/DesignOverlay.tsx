@@ -229,6 +229,8 @@ export function DesignOverlay({ style, onClose, onSelectDesign }: Props) {
       className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 px-4 py-20 overflow-y-auto"
       style={{ background: "rgba(254,249,247,0.88)", backdropFilter: "blur(10px)" }}
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Back button */}
       <button
@@ -243,11 +245,7 @@ export function DesignOverlay({ style, onClose, onSelectDesign }: Props) {
       </button>
 
       {/* Card stack + arrows */}
-      <div
-        className="relative flex items-center gap-8"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
+      <div className="relative flex items-center gap-8">
         {/* Left arrow */}
         {total > 1 && (
           <button
@@ -300,6 +298,20 @@ export function DesignOverlay({ style, onClose, onSelectDesign }: Props) {
                     style={{ background: "var(--caiena-bg2)" }}
                   />
                 )}
+                {/* Name overlay — only on the front card */}
+                {isActive && (
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent pt-10 pb-3 px-3">
+                    <p
+                      className="text-center text-white font-light leading-tight"
+                      style={{
+                        fontFamily: "var(--font-cormorant), 'Cormorant Garamond', serif",
+                        fontSize: "clamp(1rem, 3.5vw, 1.25rem)",
+                      }}
+                    >
+                      {style.name}
+                    </p>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -325,22 +337,6 @@ export function DesignOverlay({ style, onClose, onSelectDesign }: Props) {
         className="text-center"
         style={{ animation: "cardEntrance 0.5s ease both" }}
       >
-        <p
-          className="text-2xl font-light italic mb-1"
-          style={{
-            fontFamily: "var(--font-cormorant), 'Cormorant Garamond', serif",
-            color: "var(--caiena-plum)",
-          }}
-        >
-          {style.name}
-        </p>
-        <p
-          className="text-xs tracking-widest uppercase mb-4"
-          style={{ color: "var(--caiena-rose)" }}
-        >
-          {total > 1 && `${poseIdx + 1} / ${total}`}
-        </p>
-
         {/* Pose dots */}
         <div className="flex justify-center gap-1.5 mb-6">
           {variants.map((_, i) => (
