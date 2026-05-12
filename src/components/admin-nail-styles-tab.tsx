@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useAdminT } from "@/components/admin-locale-context";
 
 interface NailStyle {
   id: number;
@@ -99,6 +100,7 @@ const EMPTY_FORM: StyleForm = {
 };
 
 export function AdminNailStylesTab() {
+  const t = useAdminT();
   const [styles, setStyles] = useState<NailStyle[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<NailStyle | null>(null);
@@ -217,7 +219,7 @@ export function AdminNailStylesTab() {
   }
 
   async function handleDelete(style: NailStyle) {
-    if (!confirm(`¿Eliminar "${style.name}"?`)) return;
+    if (!confirm(t.nailStyles.deleteConfirm.replace("{name}", style.name))) return;
     await fetch(`/api/admin/nail-styles/${style.id}`, { method: "DELETE" });
     await load();
   }
@@ -277,7 +279,7 @@ export function AdminNailStylesTab() {
     imageInputRef.current?.click();
   }
 
-  if (loading) return <div className="py-8 text-center text-gray-400 text-sm">Cargando...</div>;
+  if (loading) return <div className="py-8 text-center text-gray-400 text-sm">{t.nailStyles.loading}</div>;
 
   const showForm = creating || editing !== null;
 
@@ -285,7 +287,7 @@ export function AdminNailStylesTab() {
     <div className="space-y-6">
       {/* ── Generate from reference image ── */}
       <div className="mb-8 p-5 rounded-2xl border border-accent-light/30 bg-cream/30">
-        <h3 className="font-serif text-base font-semibold mb-4">Generar variantes desde foto de referencia</h3>
+        <h3 className="font-serif text-base font-semibold mb-4">{t.nailStyles.generateVariants}</h3>
         <GenerateVariantsPanel />
       </div>
 
@@ -294,13 +296,13 @@ export function AdminNailStylesTab() {
       <input ref={classifyInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleClassifyImage} className="hidden" />
 
       <div className="flex justify-between items-center">
-        <h2 className="text-lg font-medium text-gray-800">Diseños de Uñas</h2>
+        <h2 className="text-lg font-medium text-gray-800">{t.nailStyles.title}</h2>
         {!showForm && (
           <button
             onClick={startCreate}
             className="px-4 py-2 bg-accent text-white rounded-lg text-sm hover:bg-accent-dark transition-colors"
           >
-            + Nuevo Diseño
+            + {t.nailStyles.addNew}
           </button>
         )}
       </div>
@@ -308,14 +310,14 @@ export function AdminNailStylesTab() {
       {/* ── Form ─────────────────────────────────────────────────────────── */}
       {showForm && (
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-5">
-          <h3 className="font-medium text-gray-700">{editing ? "Editar Diseño" : "Nuevo Diseño"}</h3>
+          <h3 className="font-medium text-gray-700">{editing ? t.nailStyles.editTitle : t.nailStyles.addNew}</h3>
 
           {/* Image + auto-classify (create only) */}
           {!editing && (
             <div>
               <p className="text-xs text-gray-500 mb-2">
-                Foto del diseño{" "}
-                <span className="text-gray-400 font-normal">— la IA detectará automáticamente los campos</span>
+                {t.nailStyles.uploadPhoto}{" "}
+                <span className="text-gray-400 font-normal">— {t.nailStyles.aiAutoDetect}</span>
               </p>
               <div className="flex items-start gap-4">
                 <div
@@ -329,21 +331,21 @@ export function AdminNailStylesTab() {
                       <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 5.75 5.75 0 011.023 10.9" />
                       </svg>
-                      <span className="text-[10px]">Subir foto</span>
+                      <span className="text-[10px]">{t.nailStyles.selectFile}</span>
                     </div>
                   )}
                   {classifying && (
                     <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center gap-2">
                       <div className="w-5 h-5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-                      <span className="text-[10px] text-accent-dark">Analizando...</span>
+                      <span className="text-[10px] text-accent-dark">{t.nailStyles.analyzing}</span>
                     </div>
                   )}
                 </div>
                 <div className="text-xs text-gray-400 pt-2 space-y-1">
-                  <p>1. Sube una foto del diseño</p>
-                  <p>2. La IA detecta estilo, color, acabado y forma</p>
-                  <p>3. Revisa y ajusta los campos</p>
-                  <p>4. Guarda</p>
+                  <p>{t.nailStyles.step1}</p>
+                  <p>{t.nailStyles.step2}</p>
+                  <p>{t.nailStyles.step3}</p>
+                  <p>{t.nailStyles.step4}</p>
                 </div>
               </div>
             </div>
@@ -352,7 +354,7 @@ export function AdminNailStylesTab() {
           {/* Name + Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Nombre</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.name}</label>
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -361,7 +363,7 @@ export function AdminNailStylesTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Categoría</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.category}</label>
               <select
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -376,7 +378,7 @@ export function AdminNailStylesTab() {
 
           {/* Description */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Descripción</label>
+            <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.description}</label>
             <input
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -388,7 +390,7 @@ export function AdminNailStylesTab() {
           {/* Classification fields */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Estilo</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.style}</label>
               <select
                 value={form.estilo}
                 onChange={(e) => setForm({ ...form, estilo: e.target.value })}
@@ -398,7 +400,7 @@ export function AdminNailStylesTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Color</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.color}</label>
               <select
                 value={form.color}
                 onChange={(e) => setForm({ ...form, color: e.target.value })}
@@ -408,7 +410,7 @@ export function AdminNailStylesTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Acabado</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.finish}</label>
               <select
                 value={form.acabado}
                 onChange={(e) => setForm({ ...form, acabado: e.target.value })}
@@ -418,7 +420,7 @@ export function AdminNailStylesTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Forma</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.shape}</label>
               <select
                 value={form.forma}
                 onChange={(e) => setForm({ ...form, forma: e.target.value })}
@@ -432,7 +434,7 @@ export function AdminNailStylesTab() {
           {/* Badge + discount + sortOrder */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Badge</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.badge}</label>
               <select
                 value={form.badge}
                 onChange={(e) => setForm({ ...form, badge: e.target.value })}
@@ -442,7 +444,7 @@ export function AdminNailStylesTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Descuento (%)</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.discount}</label>
               <input
                 type="number"
                 min={0}
@@ -454,7 +456,7 @@ export function AdminNailStylesTab() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Orden</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.order}</label>
               <input
                 type="number"
                 value={form.sortOrder}
@@ -467,8 +469,8 @@ export function AdminNailStylesTab() {
           {/* Prompt */}
           <div>
             <label className="block text-xs text-gray-500 mb-1">
-              Prompt para IA{" "}
-              <span className="text-gray-400 font-normal">(descripción técnica en inglés — usada cuando no hay foto)</span>
+              {t.nailStyles.aiPrompt}{" "}
+              <span className="text-gray-400 font-normal">({t.nailStyles.aiPromptDesc})</span>
             </label>
             <textarea
               value={form.prompt}
@@ -485,13 +487,13 @@ export function AdminNailStylesTab() {
               disabled={saving || !form.name || !form.prompt}
               className="px-5 py-2 bg-accent text-white rounded-lg text-sm hover:bg-accent-dark disabled:opacity-50 transition-colors"
             >
-              {saving ? "Guardando..." : "Guardar"}
+              {saving ? t.nailStyles.saving : t.nailStyles.save}
             </button>
             <button
               onClick={cancelForm}
               className="px-5 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-100 transition-colors"
             >
-              Cancelar
+              {t.nailStyles.cancel}
             </button>
           </div>
         </div>
@@ -500,7 +502,7 @@ export function AdminNailStylesTab() {
       {/* ── Styles grid ──────────────────────────────────────────────────── */}
       {styles.length === 0 && !showForm ? (
         <div className="py-12 text-center text-gray-400 text-sm">
-          No hay diseños todavía. Crea el primero.
+          {t.nailStyles.noData}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -515,7 +517,7 @@ export function AdminNailStylesTab() {
               <div
                 className="relative aspect-square bg-gray-50 cursor-pointer group"
                 onClick={() => triggerImageUpload(style.id)}
-                title="Clic para cambiar foto"
+                title={t.nailStyles.changePhoto}
               >
                 {style.thumbnailUrl ? (
                   <img src={style.thumbnailUrl} alt={style.name} className="w-full h-full object-cover" />
@@ -524,7 +526,7 @@ export function AdminNailStylesTab() {
                     <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 001.5-1.5V5.25a1.5 1.5 0 00-1.5-1.5H3.75a1.5 1.5 0 00-1.5 1.5v14.25c0 .828.672 1.5 1.5 1.5z" />
                     </svg>
-                    Subir foto
+                    {t.nailStyles.selectFile}
                   </div>
                 )}
                 {/* Badge overlay */}
@@ -540,7 +542,7 @@ export function AdminNailStylesTab() {
                 )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <span className="text-white text-xs font-medium">
-                    {uploadingId === style.id ? "Subiendo..." : "Cambiar foto"}
+                    {uploadingId === style.id ? t.nailStyles.uploading : t.nailStyles.changePhoto}
                   </span>
                 </div>
               </div>
@@ -566,7 +568,7 @@ export function AdminNailStylesTab() {
                     <button
                       onClick={() => startEdit(style)}
                       className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
-                      title="Editar"
+                      title={t.nailStyles.edit}
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
@@ -575,7 +577,7 @@ export function AdminNailStylesTab() {
                     <button
                       onClick={() => handleToggleActive(style)}
                       className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
-                      title={style.active ? "Desactivar" : "Activar"}
+                      title={style.active ? t.nailStyles.deactivate : t.nailStyles.activate}
                     >
                       {style.active ? (
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -590,7 +592,7 @@ export function AdminNailStylesTab() {
                     <button
                       onClick={() => handleDelete(style)}
                       className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
-                      title="Eliminar"
+                      title={t.nailStyles.delete}
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
@@ -602,7 +604,7 @@ export function AdminNailStylesTab() {
                   <p className="text-xs text-gray-400 mt-1.5 truncate">{style.description}</p>
                 )}
                 {!style.thumbnailUrl && (
-                  <p className="text-[10px] text-amber-500 mt-1">Sin foto — se usará prompt de texto</p>
+                  <p className="text-[10px] text-amber-500 mt-1">{t.nailStyles.noPhotoWarning}</p>
                 )}
               </div>
             </div>
@@ -622,6 +624,7 @@ const BADGE_COLORS: Record<string, string> = {
 };
 
 function GenerateVariantsPanel() {
+  const t = useAdminT();
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [classifying, setClassifying] = useState(false);
@@ -682,7 +685,7 @@ function GenerateVariantsPanel() {
     setStatus("idle"); setFile(null); setPreview(null); setName(""); setVariants([]); setStyleId(null);
   };
 
-  const BASES_LABELS: Record<string, string> = { garra: "Garra", ascendente: "Ascendente", doble: "Doble", rocio: "Rocío" };
+  const BASES_LABELS: Record<string, string> = { garra: t.nailStyles.baseGarra, ascendente: t.nailStyles.baseAscendente, doble: t.nailStyles.baseDoble, rocio: t.nailStyles.baseRocio };
 
   return (
     <div className="space-y-4">
@@ -692,14 +695,14 @@ function GenerateVariantsPanel() {
           onClick={() => fileRef.current?.click()}
         >
           {preview ? <img src={preview} alt="preview" className="w-full h-full object-cover" /> : (
-            <span className="text-xs text-foreground/30 text-center px-1">+ Foto de referencia</span>
+            <span className="text-xs text-foreground/30 text-center px-1">+ {t.nailStyles.referencePhoto}</span>
           )}
         </div>
         <div className="flex-1 space-y-3">
           <div className="relative">
             <input
               type="text"
-              placeholder={classifying ? "Analizando diseño..." : "Nombre del diseño"}
+              placeholder={classifying ? t.nailStyles.analyzingDesign : t.nailStyles.designName}
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={classifying}
@@ -716,7 +719,7 @@ function GenerateVariantsPanel() {
             disabled={!file || status === "generating"}
             className="w-full bg-foreground text-white text-sm py-2.5 rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50"
           >
-            {status === "generating" ? "Generando variantes..." : "Generar 4 variantes"}
+            {status === "generating" ? t.nailStyles.generating : t.nailStyles.generate4}
           </button>
         </div>
       </div>
@@ -724,7 +727,7 @@ function GenerateVariantsPanel() {
 
       {status === "done" && variants.length > 0 && (
         <div>
-          <p className="text-xs text-foreground/50 mb-3">Variantes generadas:</p>
+          <p className="text-xs text-foreground/50 mb-3">{t.nailStyles.generated}</p>
           <div className="grid grid-cols-4 gap-2 mb-4">
             {variants.filter(v => v.status === "done" && v.imagePath).map((v) => (
               <div key={v.baseId} className="space-y-1">
@@ -740,13 +743,13 @@ function GenerateVariantsPanel() {
             disabled={publishLoading}
             className="w-full bg-emerald-600 text-white text-sm py-2.5 rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
           >
-            {publishLoading ? "Publicando..." : "Publicar diseño en el carrusel"}
+            {publishLoading ? t.nailStyles.publishing : t.nailStyles.publish}
           </button>
         </div>
       )}
 
       {status === "error" && (
-        <p className="text-sm text-red-600">Error generando variantes. Intenta de nuevo.</p>
+        <p className="text-sm text-red-600">{t.nailStyles.errorGenerating}</p>
       )}
     </div>
   );

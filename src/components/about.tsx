@@ -1,10 +1,10 @@
-import { ScrollReveal, SpringReveal } from "@/components/scroll-reveal";
-import { getLocale } from "@/i18n/locale";
-import { getT } from "@/i18n";
+"use client";
 
-export async function About() {
-  const locale = await getLocale();
-  const t = getT(locale).about;
+import { ScrollReveal, SpringReveal } from "@/components/scroll-reveal";
+import { useSiteT } from "@/components/site-locale-context";
+
+export function About() {
+  const t = useSiteT().about;
   return (
     <section id="sobre-mi" className="py-28 sm:py-36 relative overflow-hidden noise-overlay">
       <div className="absolute inset-0 bg-white" />

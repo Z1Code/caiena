@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useState, useEffect, useTransition } from "react";
-import { setLocaleCookie } from "@/i18n/locale";
-import { getClientLocale } from "@/i18n";
+import { useState, useEffect } from "react";
+import { useAdminLocale } from "@/components/admin-locale-context";
 
+// navKey maps to t.nav.*
 const NAV_ITEMS = [
   {
     href: "/dashboard/bookings",
-    label: "Reservas",
+    navKey: "bookings" as const,
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-5 h-5">
         <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -20,7 +20,7 @@ const NAV_ITEMS = [
   },
   {
     href: "/dashboard/staff",
-    label: "Empleadas",
+    navKey: "staff" as const,
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-5 h-5">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -31,7 +31,7 @@ const NAV_ITEMS = [
   },
   {
     href: "/dashboard/schedule",
-    label: "Horarios",
+    navKey: "schedule" as const,
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-5 h-5">
         <circle cx="12" cy="12" r="10" />
@@ -41,7 +41,7 @@ const NAV_ITEMS = [
   },
   {
     href: "/dashboard/groups",
-    label: "Grupos",
+    navKey: "groups" as const,
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-5 h-5">
         <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -53,7 +53,7 @@ const NAV_ITEMS = [
   },
   {
     href: "/dashboard/services",
-    label: "Servicios",
+    navKey: "services" as const,
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-5 h-5">
         <path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z" />
@@ -69,7 +69,7 @@ const NAV_ITEMS = [
   },
   {
     href: "/dashboard/catalog",
-    label: "Diseños",
+    navKey: "designs" as const,
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-5 h-5">
         <path d="M12 20h9" />
@@ -79,7 +79,7 @@ const NAV_ITEMS = [
   },
   {
     href: "/dashboard/site",
-    label: "Sitio",
+    navKey: "site" as const,
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-5 h-5">
         <circle cx="12" cy="12" r="3" />
@@ -92,7 +92,7 @@ const NAV_ITEMS = [
 
 const USERS_ITEM = {
   href: "/dashboard/users",
-  label: "Usuarios",
+  navKey: "users" as const,
   icon: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="w-5 h-5">
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -101,21 +101,7 @@ const USERS_ITEM = {
 };
 
 function LocaleSwitcher() {
-  const [pending, startTransition] = useTransition();
-  const [locale, setLocale] = useState<"es" | "en">("es");
-
-  useEffect(() => {
-    setLocale(getClientLocale());
-  }, []);
-
-  function switchTo(next: "es" | "en") {
-    if (next === locale || pending) return;
-    startTransition(async () => {
-      await setLocaleCookie(next);
-      setLocale(next);
-      window.location.reload();
-    });
-  }
+  const { locale, setLocale } = useAdminLocale();
 
   return (
     <div className="flex items-center gap-1 px-3 py-2">
@@ -127,9 +113,8 @@ function LocaleSwitcher() {
         {(["es", "en"] as const).map((lang) => (
           <button
             key={lang}
-            onClick={() => switchTo(lang)}
-            disabled={pending}
-            className={`px-2.5 py-1 text-xs font-medium uppercase tracking-wide transition-colors disabled:opacity-50 ${
+            onClick={() => setLocale(lang)}
+            className={`px-2.5 py-1 text-xs font-medium uppercase tracking-wide transition-colors ${
               locale === lang
                 ? "bg-[var(--accent)] text-white"
                 : "text-gray-500 hover:bg-gray-100"
@@ -146,6 +131,7 @@ function LocaleSwitcher() {
 export function AdminSidebar({ canManageUsers }: { canManageUsers: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { t } = useAdminLocale();
 
   // Close drawer on navigation
   useEffect(() => {
@@ -188,7 +174,7 @@ export function AdminSidebar({ canManageUsers }: { canManageUsers: boolean }) {
               <span className={active ? "text-[var(--accent)]" : "text-gray-400"}>
                 {item.icon}
               </span>
-              {item.label}
+              {t.nav[item.navKey]}
             </Link>
           );
         })}
@@ -205,7 +191,7 @@ export function AdminSidebar({ canManageUsers }: { canManageUsers: boolean }) {
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
             <polyline points="9 22 9 12 15 12 15 22" />
           </svg>
-          Ver sitio
+          {t.nav.viewSite}
         </a>
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
@@ -216,7 +202,7 @@ export function AdminSidebar({ canManageUsers }: { canManageUsers: boolean }) {
             <polyline points="16 17 21 12 16 7" />
             <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
-          Cerrar sesión
+          {t.nav.logout}
         </button>
       </div>
     </nav>

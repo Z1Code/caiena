@@ -65,7 +65,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${playfair.variable} ${cormorant.variable} ${jost.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Providers>
+        <Providers initialLocale={locale}>
           {children}
           <AIChatbot />
         </Providers>

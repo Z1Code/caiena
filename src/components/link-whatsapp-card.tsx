@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { getT, getClientLocale } from "@/i18n"
+import { useSiteT } from "@/components/site-locale-context"
 
 export function LinkWhatsAppCard() {
   const [loading, setLoading] = useState(false)
@@ -11,7 +11,7 @@ export function LinkWhatsAppCard() {
   const router = useRouter()
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const t = getT(getClientLocale()).whatsapp
+  const t = useSiteT().whatsapp
 
   // Poll every 3 seconds while waiting for bot confirmation
   function startPolling() {

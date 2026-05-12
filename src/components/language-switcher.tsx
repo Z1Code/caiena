@@ -1,30 +1,19 @@
 "use client";
 
-import { useTransition } from "react";
-import { setLocaleCookie } from "@/i18n/locale";
-import { getClientLocale } from "@/i18n";
+import { useSiteLocale } from "@/components/site-locale-context";
 
 export function LanguageSwitcher({ className }: { className?: string }) {
-  const [pending, startTransition] = useTransition();
-  const locale = getClientLocale();
+  const { locale, setLocale } = useSiteLocale();
   const next = locale === "es" ? "en" : "es";
   const label = locale === "es" ? "EN" : "ES";
 
-  function toggle() {
-    startTransition(async () => {
-      await setLocaleCookie(next);
-      window.location.reload();
-    });
-  }
-
   return (
     <button
-      onClick={toggle}
-      disabled={pending}
+      onClick={() => setLocale(next)}
       aria-label={`Switch to ${next.toUpperCase()}`}
-      className={`text-xs font-medium tracking-[0.1em] uppercase border border-current/30 rounded-full px-2.5 py-1 hover:border-current/60 transition-colors disabled:opacity-50 ${className ?? ""}`}
+      className={`text-xs font-medium tracking-[0.1em] uppercase border border-current/30 rounded-full px-2.5 py-1 hover:border-current/60 transition-colors ${className ?? ""}`}
     >
-      {pending ? "…" : label}
+      {label}
     </button>
   );
 }

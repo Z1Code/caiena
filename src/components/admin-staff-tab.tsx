@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useAdminT } from "@/components/admin-locale-context";
 
 interface Service {
   id: number;
@@ -20,6 +21,7 @@ interface StaffMember {
 }
 
 export function AdminStaffTab() {
+  const t = useAdminT();
   const [members, setMembers] = useState<StaffMember[]>([]);
   const [allServices, setAllServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +69,7 @@ export function AdminStaffTab() {
   }
 
   async function handleSave() {
-    if (!form.name.trim()) { setError("Nombre requerido"); return; }
+    if (!form.name.trim()) { setError(t.staff.nameRequired); return; }
     setSaving(true);
     setError("");
     try {
@@ -89,7 +91,7 @@ export function AdminStaffTab() {
   }
 
   async function handleDeactivate(id: number) {
-    if (!confirm("¿Desactivar esta empleada?")) return;
+    if (!confirm(t.staff.deactivateConfirm)) return;
     await fetch(`/api/admin/staff/${id}`, { method: "DELETE" });
     fetchAll();
   }
@@ -104,7 +106,7 @@ export function AdminStaffTab() {
   }
 
   const roleLabels: Record<string, string> = {
-    super_admin: "Super Admin", manager: "Manager", staff: "Empleada",
+    super_admin: t.staff.roleSuperAdmin, manager: t.staff.roleManager, staff: t.staff.roleEmployee,
   };
   const roleBadge: Record<string, string> = {
     super_admin: "bg-purple-100 text-purple-700",
@@ -119,9 +121,9 @@ export function AdminStaffTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-foreground">Empleadas</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t.staff.title}</h2>
         <button onClick={openCreate} className="bg-accent text-white px-4 py-2 rounded-lg text-sm hover:bg-accent-dark transition-colors">
-          + Nueva empleada
+          + {t.staff.addNew}
         </button>
       </div>
 
@@ -129,7 +131,7 @@ export function AdminStaffTab() {
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h3 className="font-semibold text-foreground mb-4">{editing ? "Editar empleada" : "Nueva empleada"}</h3>
+            <h3 className="font-semibold text-foreground mb-4">{editing ? t.staff.edit : t.staff.addNew}</h3>
             {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
             <div className="space-y-3">
@@ -139,32 +141,32 @@ export function AdminStaffTab() {
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent/60" />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Teléfono (WhatsApp)</label>
+                <label className="text-xs text-gray-500 mb-1 block">{t.staff.phone}</label>
                 <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent/60" />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Email</label>
+                <label className="text-xs text-gray-500 mb-1 block">{t.staff.email}</label>
                 <input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent/60" />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">ID Google Calendar</label>
+                <label className="text-xs text-gray-500 mb-1 block">{t.staff.googleCalendarId}</label>
                 <input value={form.googleCalendarId} onChange={(e) => setForm((f) => ({ ...f, googleCalendarId: e.target.value }))}
                   placeholder="email@gmail.com"
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent/60" />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Rol</label>
+                <label className="text-xs text-gray-500 mb-1 block">{t.staff.role}</label>
                 <select value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent/60">
-                  <option value="staff">Empleada</option>
-                  <option value="manager">Manager</option>
-                  <option value="super_admin">Super Admin</option>
+                  <option value="staff">{t.staff.roleEmployee}</option>
+                  <option value="manager">{t.staff.roleManager}</option>
+                  <option value="super_admin">{t.staff.roleSuperAdmin}</option>
                 </select>
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-2 block">Servicios que realiza</label>
+                <label className="text-xs text-gray-500 mb-2 block">{t.staff.services}</label>
                 <div className="space-y-1.5">
                   {allServices.map((s) => (
                     <label key={s.id} className="flex items-center gap-2 cursor-pointer">
@@ -181,12 +183,12 @@ export function AdminStaffTab() {
             <div className="flex gap-2 mt-6">
               <button onClick={() => setShowForm(false)}
                 className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                Cancelar
+                {t.services.cancel}
               </button>
               <button onClick={handleSave} disabled={saving}
                 className="flex-1 bg-accent text-white py-2.5 rounded-lg text-sm hover:bg-accent-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                 {saving && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                {saving ? "Guardando..." : "Guardar"}
+                {saving ? t.staff.saving : t.staff.save}
               </button>
             </div>
           </div>
@@ -196,7 +198,7 @@ export function AdminStaffTab() {
       {/* Staff list */}
       {members.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
-          <p className="text-sm">No hay empleadas registradas.</p>
+          <p className="text-sm">{t.staff.noData}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -210,7 +212,7 @@ export function AdminStaffTab() {
                       {roleLabels[m.role] ?? m.role}
                     </span>
                   )}
-                  {!m.active && <span className="text-xs text-gray-400">(inactiva)</span>}
+                  {!m.active && <span className="text-xs text-gray-400">{t.staff.inactive}</span>}
                 </div>
                 {m.phone && <p className="text-xs text-gray-500">{m.phone}</p>}
                 {m.email && <p className="text-xs text-gray-500">{m.email}</p>}
@@ -222,11 +224,11 @@ export function AdminStaffTab() {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button onClick={() => openEdit(m)} className="text-xs text-accent-dark hover:text-foreground border border-accent-light/40 px-3 py-1.5 rounded-lg hover:bg-cream/50 transition-colors">
-                  Editar
+                  {t.staff.editAction}
                 </button>
                 {m.active && (
                   <button onClick={() => handleDeactivate(m.id)} className="text-xs text-red-500 hover:text-red-700 border border-red-100 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
-                    Desactivar
+                    {t.staff.deactivate}
                   </button>
                 )}
               </div>

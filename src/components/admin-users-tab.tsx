@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useAdminT } from "@/components/admin-locale-context"
 
 interface UserProfile {
   id: number
@@ -14,6 +15,7 @@ interface UserProfile {
 }
 
 export function AdminUsersTab() {
+  const t = useAdminT()
   const [users, setUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<number | null>(null)
@@ -48,16 +50,16 @@ export function AdminUsersTab() {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-foreground">Usuarios registrados</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t.users.title}</h2>
         <p className="text-sm text-gray-500">
-          Los cambios de rol se aplican en la próxima sesión del usuario (máx. 5 min).
+          {t.users.roleNote}
         </p>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {users.length === 0 ? (
           <div className="py-12 text-center text-gray-400 text-sm">
-            No hay usuarios registrados aún
+            {t.users.noData}
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
@@ -104,7 +106,7 @@ export function AdminUsersTab() {
                       disabled={updating === user.id}
                       className="text-xs bg-accent text-white px-3 py-1.5 rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50"
                     >
-                      {updating === user.id ? "..." : "Hacer admin"}
+                      {updating === user.id ? t.users.loading : t.users.makeAdmin}
                     </button>
                   ) : (
                     <button
@@ -112,7 +114,7 @@ export function AdminUsersTab() {
                       disabled={updating === user.id}
                       className="text-xs bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
                     >
-                      {updating === user.id ? "..." : "Quitar admin"}
+                      {updating === user.id ? t.users.loading : t.users.removeAdmin}
                     </button>
                   )}
                 </div>

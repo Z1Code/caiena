@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, useCallback } from "react";
-import { getT, getClientLocale } from "@/i18n";
+import { useSiteT } from "@/components/site-locale-context";
 
 // ── Config ─────────────────────────────────────────────────────────
 const TOTAL_FRAMES  = 140;
@@ -26,7 +26,7 @@ interface TextOverlay {
 }
 
 function getTextOverlays(): TextOverlay[] {
-  const hero = getT(getClientLocale()).hero;
+  const hero = useSiteT().hero;
   return [
     {
       text: hero.word1,

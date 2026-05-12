@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { SpringReveal, ScrollReveal } from "@/components/scroll-reveal";
-import { getT, getClientLocale } from "@/i18n";
+import { useSiteT } from "@/components/site-locale-context";
 
 interface Review {
   id: number;
@@ -14,7 +14,7 @@ interface Review {
 
 export function Testimonials() {
   const [reviews, setReviews] = useState<Review[]>([]);
-  const t = getT(getClientLocale()).testimonials;
+  const t = useSiteT().testimonials;
 
   useEffect(() => {
     fetch("/api/reviews")

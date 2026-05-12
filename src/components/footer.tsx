@@ -1,9 +1,9 @@
-import { getLocale } from "@/i18n/locale";
-import { getT } from "@/i18n";
+"use client";
 
-export async function Footer() {
-  const locale = await getLocale();
-  const t = getT(locale);
+import { useSiteT } from "@/components/site-locale-context";
+
+export function Footer() {
+  const t = useSiteT();
 
   const navLinks = [
     { href: "/reservar", label: t.footer.bookAppointment },

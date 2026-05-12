@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { AuthWidget } from "./auth-widget";
 import { LanguageSwitcher } from "./language-switcher";
-import { getT, getClientLocale } from "@/i18n";
+import { useSiteT } from "@/components/site-locale-context";
 
 function CaienaLogo() {
   return (
@@ -50,11 +50,7 @@ function CaienaLogo() {
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [t, setT] = useState(() => getT(getClientLocale()));
-
-  useEffect(() => {
-    setT(getT(getClientLocale()));
-  }, []);
+  const t = useSiteT();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);

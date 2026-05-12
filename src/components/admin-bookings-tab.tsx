@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useAdminT } from "@/components/admin-locale-context";
 import { format, addDays, subDays, startOfWeek, addWeeks, subWeeks } from "date-fns";
 import { es } from "date-fns/locale";
 import { useRouter } from "next/navigation";
@@ -30,6 +31,7 @@ interface Stats {
 type ViewMode = "today" | "week";
 
 export function AdminBookingsTab() {
+  const t = useAdminT();
   const [stats, setStats] = useState<Stats | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("today");
@@ -95,10 +97,10 @@ export function AdminBookingsTab() {
     <>
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <StatCard label="Hoy" value={stats.today.count} sub="citas" accent />
-          <StatCard label="Manana" value={stats.tomorrow.count} sub="citas" />
-          <StatCard label="Pendientes" value={stats.totals.confirmed} sub="confirmadas" />
-          <StatCard label="Ingresos" value={`$${stats.totals.revenue}`} sub="completadas" />
+          <StatCard label={t.bookings.today} value={stats.today.count} sub="citas" accent />
+          <StatCard label={t.bookings.tomorrow} value={stats.tomorrow.count} sub="citas" />
+          <StatCard label={t.bookings.pending} value={stats.totals.confirmed} sub={t.bookings.confirmed} />
+          <StatCard label={t.bookings.revenue} value={`$${stats.totals.revenue}`} sub={t.bookings.completed} />
         </div>
       )}
 
@@ -112,7 +114,7 @@ export function AdminBookingsTab() {
                 : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
             }`}
           >
-            Dia
+            {t.bookings.day}
           </button>
           <button
             onClick={() => setViewMode("week")}
@@ -122,7 +124,7 @@ export function AdminBookingsTab() {
                 : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
             }`}
           >
-            Semana
+            {t.bookings.week}
           </button>
         </div>
 
@@ -139,7 +141,7 @@ export function AdminBookingsTab() {
                 {format(new Date(selectedDate + "T12:00:00"), "EEEE d 'de' MMMM", { locale: es })}
               </span>
               {selectedDate === todayStr && (
-                <span className="ml-2 text-xs bg-accent/10 text-accent-dark px-2 py-0.5 rounded-full">Hoy</span>
+                <span className="ml-2 text-xs bg-accent/10 text-accent-dark px-2 py-0.5 rounded-full">{t.bookings.today}</span>
               )}
             </div>
             <button
@@ -153,7 +155,7 @@ export function AdminBookingsTab() {
                 onClick={() => setSelectedDate(todayStr)}
                 className="text-xs text-accent-dark hover:text-foreground"
               >
-                Hoy
+                {t.bookings.today}
               </button>
             )}
           </div>
@@ -225,6 +227,7 @@ function DayView({
   timeSlots: string[];
   onStatusChange: (id: string, status: string) => void;
 }) {
+  const t = useAdminT();
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       {bookings.length === 0 ? (
@@ -232,7 +235,7 @@ function DayView({
           <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
           </svg>
-          <p className="text-sm">No hay citas para este dia</p>
+          <p className="text-sm">{t.bookings.noCitas}</p>
         </div>
       ) : (
         <div className="divide-y divide-gray-100">
@@ -269,6 +272,7 @@ function BookingBlock({
   booking: Booking;
   onStatusChange: (id: string, status: string) => void;
 }) {
+  const t = useAdminT();
   const statusColors = {
     confirmed: "bg-accent/10 border-accent/30 text-accent-dark",
     completed: "bg-green-50 border-green-200 text-green-800",
@@ -294,7 +298,7 @@ function BookingBlock({
             <>
               <button
                 onClick={() => onStatusChange(booking.id, "completed")}
-                title="Marcar completada"
+                title={t.bookings.markCompleted}
                 className="p-1.5 rounded-md hover:bg-green-100 text-green-600"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -303,7 +307,7 @@ function BookingBlock({
               </button>
               <button
                 onClick={() => onStatusChange(booking.id, "cancelled")}
-                title="Cancelar"
+                title={t.bookings.cancel}
                 className="p-1.5 rounded-md hover:bg-red-100 text-red-500"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

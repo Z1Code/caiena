@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useAdminT } from "@/components/admin-locale-context";
 
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const DAY_INDICES = [0, 1, 2, 3, 4, 5, 6];
@@ -17,6 +18,7 @@ interface ScheduleData {
 }
 
 export function AdminScheduleTab() {
+  const t = useAdminT();
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [selectedStaff, setSelectedStaff] = useState<number | null>(null);
   const [scheduleData, setScheduleData] = useState<ScheduleData | null>(null);
@@ -158,16 +160,16 @@ export function AdminScheduleTab() {
     }));
   }
 
-  const exTypeLabels: Record<string, string> = { VACATION: "Vacación", SICK: "Enfermedad", CUSTOM_HOURS: "Horario especial", CLOSED: "Día cerrado" };
-  const blockTypeLabels: Record<string, string> = { LUNCH: "Almuerzo", BREAK: "Descanso", ADMIN: "Admin", PERSONAL: "Personal" };
+  const exTypeLabels: Record<string, string> = { VACATION: t.schedule.vacation, SICK: t.schedule.sick, CUSTOM_HOURS: t.schedule.customHours, CLOSED: t.schedule.closedDay };
+  const blockTypeLabels: Record<string, string> = { LUNCH: t.schedule.lunch, BREAK: t.schedule.break, ADMIN: t.schedule.admin, PERSONAL: t.schedule.personal };
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-foreground mb-4">Horarios de empleadas</h2>
+      <h2 className="text-lg font-semibold text-foreground mb-4">{t.schedule.title}</h2>
 
       {/* Staff selector */}
       {staffList.length === 0 ? (
-        <p className="text-sm text-gray-500 py-8 text-center">Primero agrega empleadas en la pestaña &ldquo;Empleadas&rdquo;.</p>
+        <p className="text-sm text-gray-500 py-8 text-center">{t.schedule.noStaff}</p>
       ) : (
         <>
           <div className="flex gap-2 mb-6 flex-wrap">
@@ -185,7 +187,7 @@ export function AdminScheduleTab() {
             <div className="space-y-8">
               {/* Weekly hours */}
               <section className="bg-white border border-gray-200 rounded-xl p-5">
-                <h3 className="font-medium text-foreground mb-4 text-sm">Horario semanal</h3>
+                <h3 className="font-medium text-foreground mb-4 text-sm">{t.schedule.weeklySchedule}</h3>
                 <div className="space-y-2">
                   {DAY_INDICES.map((d) => (
                     <div key={d} className="flex items-center gap-3">
@@ -206,7 +208,7 @@ export function AdminScheduleTab() {
                             className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent/60" />
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400">Cerrado</span>
+                        <span className="text-xs text-gray-400">{t.schedule.closed}</span>
                       )}
                     </div>
                   ))}
@@ -214,21 +216,21 @@ export function AdminScheduleTab() {
                 <button onClick={saveSchedule} disabled={savingSchedule}
                   className="mt-4 bg-accent text-white px-4 py-2 rounded-lg text-sm hover:bg-accent-dark transition-colors disabled:opacity-50 flex items-center gap-2">
                   {savingSchedule && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  {savingSchedule ? "Guardando..." : "Guardar horario"}
+                  {savingSchedule ? t.schedule.saving : t.schedule.save}
                 </button>
               </section>
 
               {/* Exceptions */}
               <section className="bg-white border border-gray-200 rounded-xl p-5">
-                <h3 className="font-medium text-foreground mb-4 text-sm">Excepciones (vacaciones, días especiales)</h3>
+                <h3 className="font-medium text-foreground mb-4 text-sm">{t.schedule.exceptions}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Fecha</label>
+                    <label className="text-xs text-gray-500 mb-1 block">{t.schedule.date}</label>
                     <input type="date" value={exForm.date} onChange={(e) => setExForm((f) => ({ ...f, date: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent/60" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Tipo</label>
+                    <label className="text-xs text-gray-500 mb-1 block">{t.schedule.type}</label>
                     <select value={exForm.type} onChange={(e) => setExForm((f) => ({ ...f, type: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent/60">
                       {Object.entries(exTypeLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -237,27 +239,27 @@ export function AdminScheduleTab() {
                   {exForm.type === "CUSTOM_HOURS" && (
                     <>
                       <div>
-                        <label className="text-xs text-gray-500 mb-1 block">Inicio</label>
+                        <label className="text-xs text-gray-500 mb-1 block">{t.schedule.start}</label>
                         <input type="time" value={exForm.customStart} onChange={(e) => setExForm((f) => ({ ...f, customStart: e.target.value }))}
                           className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                       </div>
                       <div>
-                        <label className="text-xs text-gray-500 mb-1 block">Fin</label>
+                        <label className="text-xs text-gray-500 mb-1 block">{t.schedule.end}</label>
                         <input type="time" value={exForm.customEnd} onChange={(e) => setExForm((f) => ({ ...f, customEnd: e.target.value }))}
                           className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                       </div>
                     </>
                   )}
                   <div className="sm:col-span-2">
-                    <label className="text-xs text-gray-500 mb-1 block">Nota (opcional)</label>
+                    <label className="text-xs text-gray-500 mb-1 block">{t.schedule.note}</label>
                     <input value={exForm.note} onChange={(e) => setExForm((f) => ({ ...f, note: e.target.value }))}
-                      placeholder="ej: Vacaciones de verano"
+                      placeholder={t.schedule.notePlaceholder}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-accent/60" />
                   </div>
                 </div>
                 <button onClick={addException} disabled={savingEx || !exForm.date}
                   className="bg-accent text-white px-4 py-2 rounded-lg text-sm hover:bg-accent-dark transition-colors disabled:opacity-50">
-                  {savingEx ? "Guardando..." : "+ Agregar excepción"}
+                  {savingEx ? t.schedule.addingException : `+ ${t.schedule.addException}`}
                 </button>
 
                 {scheduleData?.exceptions && scheduleData.exceptions.length > 0 && (
@@ -276,16 +278,16 @@ export function AdminScheduleTab() {
 
               {/* Time blocks */}
               <section className="bg-white border border-gray-200 rounded-xl p-5">
-                <h3 className="font-medium text-foreground mb-4 text-sm">Bloqueos de tiempo (almuerzo, descansos)</h3>
+                <h3 className="font-medium text-foreground mb-4 text-sm">{t.schedule.timeBlocks}</h3>
                 <div className="space-y-3 mb-3">
                   <div className="flex items-center gap-4">
                     <label className="flex items-center gap-2 cursor-pointer text-sm">
                       <input type="radio" checked={blockForm.recurring} onChange={() => setBlockForm((f) => ({ ...f, recurring: true }))} />
-                      Recurrente
+                      {t.schedule.recurring}
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer text-sm">
                       <input type="radio" checked={!blockForm.recurring} onChange={() => setBlockForm((f) => ({ ...f, recurring: false }))} />
-                      Fecha específica
+                      {t.schedule.specificDate}
                     </label>
                   </div>
 
@@ -305,24 +307,24 @@ export function AdminScheduleTab() {
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Inicio</label>
+                      <label className="text-xs text-gray-500 mb-1 block">{t.schedule.start}</label>
                       <input type="time" value={blockForm.startTime} onChange={(e) => setBlockForm((f) => ({ ...f, startTime: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Fin</label>
+                      <label className="text-xs text-gray-500 mb-1 block">{t.schedule.end}</label>
                       <input type="time" value={blockForm.endTime} onChange={(e) => setBlockForm((f) => ({ ...f, endTime: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Tipo</label>
+                      <label className="text-xs text-gray-500 mb-1 block">{t.schedule.type}</label>
                       <select value={blockForm.type} onChange={(e) => setBlockForm((f) => ({ ...f, type: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                         {Object.entries(blockTypeLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Etiqueta</label>
+                      <label className="text-xs text-gray-500 mb-1 block">{t.schedule.label}</label>
                       <input value={blockForm.label} onChange={(e) => setBlockForm((f) => ({ ...f, label: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
                     </div>
@@ -330,7 +332,7 @@ export function AdminScheduleTab() {
                 </div>
                 <button onClick={addBlock} disabled={savingBlock}
                   className="bg-accent text-white px-4 py-2 rounded-lg text-sm hover:bg-accent-dark transition-colors disabled:opacity-50">
-                  {savingBlock ? "Guardando..." : "+ Agregar bloqueo"}
+                  {savingBlock ? t.schedule.addingBlock : `+ ${t.schedule.addBlock}`}
                 </button>
 
                 {scheduleData?.blocks && scheduleData.blocks.length > 0 && (

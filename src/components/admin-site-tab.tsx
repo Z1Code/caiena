@@ -1,20 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAdminT } from "@/components/admin-locale-context";
 
 interface Settings {
   show_gallery: boolean;
   show_about:   boolean;
 }
 
-const LABELS: Record<keyof Settings, { title: string; desc: string }> = {
-  show_gallery: { title: "Galería",     desc: "Sección de galería de fotos en la página principal" },
-  show_about:   { title: "La Artista",  desc: "Sección 'Sobre mí / Roxanna' en la página principal" },
-};
-
 export function AdminSiteTab() {
+  const t = useAdminT();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [saving, setSaving]     = useState(false);
+
+  const LABELS: Record<keyof Settings, { title: string; desc: string }> = {
+    show_gallery: { title: t.site.gallery, desc: t.site.galleryDesc },
+    show_about:   { title: t.site.about,   desc: t.site.aboutDesc },
+  };
 
   useEffect(() => {
     fetch("/api/admin/site-settings").then(r => r.json()).then(setSettings);
@@ -33,13 +35,13 @@ export function AdminSiteTab() {
     setSaving(false);
   }
 
-  if (!settings) return <div className="p-8 text-sm text-gray-400">Cargando...</div>;
+  if (!settings) return <div className="p-8 text-sm text-gray-400">{t.site.loading}</div>;
 
   return (
     <div className="p-6 max-w-lg">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-800">Secciones del sitio</h2>
-        {saving && <span className="text-xs text-gray-400">Guardando…</span>}
+        <h2 className="text-lg font-semibold text-gray-800">{t.site.title}</h2>
+        {saving && <span className="text-xs text-gray-400">{t.site.saving}</span>}
       </div>
       <div className="space-y-3">
         {(Object.keys(LABELS) as (keyof Settings)[]).map(key => (
@@ -63,7 +65,7 @@ export function AdminSiteTab() {
           </div>
         ))}
       </div>
-      <p className="mt-4 text-xs text-gray-400">Los cambios se aplican de inmediato en el sitio.</p>
+      <p className="mt-4 text-xs text-gray-400">{t.site.note}</p>
     </div>
   );
 }

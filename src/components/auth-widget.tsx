@@ -3,13 +3,13 @@
 import { useSession, signIn, signOut } from "next-auth/react"
 import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
-import { getT, getClientLocale } from "@/i18n"
+import { useSiteT } from "@/components/site-locale-context"
 
 export function AuthWidget() {
   const { data: session, status } = useSession()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const t = getT(getClientLocale()).nav
+  const t = useSiteT().nav
 
   // Close dropdown when clicking outside
   useEffect(() => {
