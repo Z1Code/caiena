@@ -121,7 +121,7 @@ export function AdminLabTab() {
     if (!res.ok) return;
     const all: NailStyle[] = await res.json();
     // Sort by id desc to get most recently created first
-    setRecentStyles(all.sort((a, b) => b.id - a.id).slice(0, 20));
+    setRecentStyles(all.sort((a, b) => b.id - a.id).slice(0, 5));
   }, []);
 
   useEffect(() => { loadRecent(); }, [loadRecent]);
@@ -175,9 +175,6 @@ function RecentStrip({ styles, onReload }: { styles: NailStyle[]; onReload: () =
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<StyleForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
-  const [uploadingId, setUploadingId] = useState<number | null>(null);
-  const [imageTargetId, setImageTargetId] = useState<number | null>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
 
   function startEdit(style: NailStyle) {
     if (editingId === style.id) { setEditingId(null); return; }
@@ -229,31 +226,12 @@ function RecentStrip({ styles, onReload }: { styles: NailStyle[]; onReload: () =
     onReload();
   }
 
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!imageTargetId || !e.target.files?.[0]) return;
-    setUploadingId(imageTargetId);
-    const formData = new FormData();
-    formData.append("image", e.target.files[0]);
-    await fetch(`/api/admin/nail-styles/${imageTargetId}/image`, { method: "POST", body: formData });
-    setUploadingId(null);
-    setImageTargetId(null);
-    e.target.value = "";
-    onReload();
-  }
-
-  function triggerImageUpload(id: number) {
-    setImageTargetId(id);
-    imageInputRef.current?.click();
-  }
-
   if (styles.length === 0) return null;
 
   const editingStyle = styles.find((s) => s.id === editingId) ?? null;
 
   return (
     <div>
-      <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-
       {/* Divider + heading */}
       <div className="flex items-center gap-3 mb-4">
         <div className="h-px flex-1 bg-gray-100" />
@@ -261,14 +239,14 @@ function RecentStrip({ styles, onReload }: { styles: NailStyle[]; onReload: () =
         <div className="h-px flex-1 bg-gray-100" />
       </div>
 
-      {/* Horizontal scroll strip */}
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+      {/* 5-column grid */}
+      <div className="grid grid-cols-5 gap-3">
         {styles.map((style) => {
           const isActive = editingId === style.id;
           return (
             <div
               key={style.id}
-              className={`flex-shrink-0 w-28 rounded-xl border overflow-hidden transition-all ${
+              className={`rounded-xl border overflow-hidden transition-all ${
                 isActive
                   ? "border-accent/50 ring-2 ring-accent/20"
                   : "border-gray-200 hover:border-gray-300"
@@ -276,14 +254,14 @@ function RecentStrip({ styles, onReload }: { styles: NailStyle[]; onReload: () =
             >
               {/* Thumbnail */}
               <div
-                className="relative w-28 h-36 bg-gray-50 cursor-pointer group"
+                className="relative aspect-[2/3] bg-gray-50 cursor-pointer group"
                 onClick={() => startEdit(style)}
               >
                 {style.thumbnailUrl ? (
                   <img src={style.thumbnailUrl} alt={style.name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-200">
-                    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 001.5-1.5V5.25a1.5 1.5 0 00-1.5-1.5H3.75a1.5 1.5 0 00-1.5 1.5v14.25c0 .828.672 1.5 1.5 1.5z" />
                     </svg>
                   </div>
@@ -293,7 +271,6 @@ function RecentStrip({ styles, onReload }: { styles: NailStyle[]; onReload: () =
                     {style.badge}
                   </div>
                 )}
-                {/* Edit hint overlay */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
@@ -302,40 +279,24 @@ function RecentStrip({ styles, onReload }: { styles: NailStyle[]; onReload: () =
               </div>
 
               {/* Name + actions */}
-              <div className="px-2 py-1.5">
-                <p className="text-[11px] font-medium text-gray-700 truncate leading-tight mb-1.5">{style.name}</p>
+              <div className="px-2 py-2">
+                <p className="text-xs font-medium text-gray-700 truncate leading-tight mb-2">{style.name}</p>
                 <div className="flex items-center justify-between gap-0.5">
-                  {/* Upload photo */}
-                  <button
-                    onClick={() => triggerImageUpload(style.id)}
-                    className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-                    title={t.nailStyles.changePhoto}
-                  >
-                    {uploadingId === style.id ? (
-                      <div className="w-3 h-3 border border-accent/40 border-t-accent rounded-full animate-spin" />
-                    ) : (
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    )}
-                  </button>
-                  {/* Edit toggle */}
                   <button
                     onClick={() => startEdit(style)}
-                    className={`p-1 rounded transition-colors ${isActive ? "bg-accent/10 text-accent" : "hover:bg-gray-100 text-gray-400 hover:text-gray-600"}`}
+                    className={`p-1.5 rounded transition-colors ${isActive ? "bg-accent/10 text-accent" : "hover:bg-gray-100 text-gray-400 hover:text-gray-600"}`}
                     title={t.nailStyles.edit}
                   >
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
                     </svg>
                   </button>
-                  {/* Delete */}
                   <button
                     onClick={() => handleDelete(style)}
-                    className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                    className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
                     title={t.nailStyles.delete}
                   >
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                     </svg>
                   </button>

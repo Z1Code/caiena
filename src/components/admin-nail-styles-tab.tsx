@@ -1,8 +1,81 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAdminT } from "@/components/admin-locale-context";
+
+interface Variant {
+  baseId: string;
+  imagePath: string;
+  status: string;
+}
+
+interface VariantLightboxProps {
+  styleName: string;
+  variants: Variant[];
+  onClose: () => void;
+}
+
+const BASE_LABELS: Record<string, string> = {
+  garra: "Garra",
+  ascendente: "Ascendente",
+  doble: "Doble",
+  rocio: "Rocío",
+};
+
+function VariantLightbox({ styleName, variants, onClose }: VariantLightboxProps) {
+  const [idx, setIdx] = useState(0);
+  const done = variants.filter((v) => v.status === "done" && v.imagePath);
+
+  const prev = useCallback(() => setIdx((i) => (i - 1 + done.length) % done.length), [done.length]);
+  const next = useCallback(() => setIdx((i) => (i + 1) % done.length), [done.length]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose, prev, next]);
+
+  if (done.length === 0) return null;
+  const current = done[idx];
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center" onClick={onClose}>
+      <button className="absolute top-4 right-4 text-white/70 hover:text-white p-2" onClick={onClose}>
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      {done.length > 1 && (
+        <button className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors" onClick={(e) => { e.stopPropagation(); prev(); }}>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+        </button>
+      )}
+      <div className="flex flex-col items-center gap-3 max-w-[90vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+        <img src={current.imagePath} alt={BASE_LABELS[current.baseId] ?? current.baseId} className="max-h-[78vh] max-w-[70vw] object-contain rounded-xl shadow-2xl" />
+        <p className="text-white/60 text-sm tracking-wide">{styleName} — {BASE_LABELS[current.baseId] ?? current.baseId}</p>
+        {done.length > 1 && (
+          <div className="flex gap-2">
+            {done.map((v, i) => (
+              <button key={v.baseId} onClick={() => setIdx(i)} className={`px-3 py-1 rounded-full text-xs transition-colors ${i === idx ? "bg-white text-black font-medium" : "bg-white/20 text-white/70 hover:bg-white/30"}`}>
+                {BASE_LABELS[v.baseId] ?? v.baseId}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      {done.length > 1 && (
+        <button className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors" onClick={(e) => { e.stopPropagation(); next(); }}>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+        </button>
+      )}
+    </div>
+  );
+}
 
 interface NailStyle {
   id: number;
@@ -43,10 +116,7 @@ export function AdminNailStylesTab() {
   const t = useAdminT();
   const [styles, setStyles] = useState<NailStyle[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [uploadingId, setUploadingId] = useState<number | null>(null);
-  const [imageTargetId, setImageTargetId] = useState<number | null>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [lightbox, setLightbox] = useState<{ name: string; variants: Variant[] } | null>(null);
 
   async function load() {
     const res = await fetch("/api/admin/nail-styles");
@@ -55,6 +125,14 @@ export function AdminNailStylesTab() {
   }
 
   useEffect(() => { load(); }, []);
+
+  async function openVariants(style: NailStyle) {
+    const res = await fetch(`/api/admin/nail-styles/${style.id}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.variants?.length) return;
+    setLightbox({ name: style.name, variants: data.variants });
+  }
 
   async function handleToggleActive(style: NailStyle) {
     await fetch(`/api/admin/nail-styles/${style.id}`, {
@@ -71,28 +149,17 @@ export function AdminNailStylesTab() {
     await load();
   }
 
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!imageTargetId || !e.target.files?.[0]) return;
-    setUploadingId(imageTargetId);
-    const formData = new FormData();
-    formData.append("image", e.target.files[0]);
-    await fetch(`/api/admin/nail-styles/${imageTargetId}/image`, { method: "POST", body: formData });
-    setUploadingId(null);
-    setImageTargetId(null);
-    e.target.value = "";
-    await load();
-  }
-
-  function triggerImageUpload(id: number) {
-    setImageTargetId(id);
-    imageInputRef.current?.click();
-  }
-
   if (loading) return <div className="py-8 text-center text-gray-400 text-sm">{t.nailStyles.loading}</div>;
 
   return (
     <div className="space-y-6">
-      <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+      {lightbox && (
+        <VariantLightbox
+          styleName={lightbox.name}
+          variants={lightbox.variants}
+          onClose={() => setLightbox(null)}
+        />
+      )}
 
       <h2 className="text-lg font-medium text-gray-800">{t.nailStyles.title}</h2>
 
@@ -110,11 +177,11 @@ export function AdminNailStylesTab() {
                 style.active ? "border-gray-200" : "border-gray-100 opacity-60"
               }`}
             >
-              {/* Thumbnail — click to replace */}
+              {/* Thumbnail — click to see variants */}
               <div
                 className="relative aspect-square bg-gray-50 cursor-pointer group"
-                onClick={() => triggerImageUpload(style.id)}
-                title={t.nailStyles.changePhoto}
+                onClick={() => openVariants(style)}
+                title="Ver variantes"
               >
                 {style.thumbnailUrl ? (
                   <img src={style.thumbnailUrl} alt={style.name} className="w-full h-full object-cover" />
@@ -123,7 +190,6 @@ export function AdminNailStylesTab() {
                     <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 001.5-1.5V5.25a1.5 1.5 0 00-1.5-1.5H3.75a1.5 1.5 0 00-1.5 1.5v14.25c0 .828.672 1.5 1.5 1.5z" />
                     </svg>
-                    {t.nailStyles.selectFile}
                   </div>
                 )}
                 {style.badge && (
@@ -137,9 +203,9 @@ export function AdminNailStylesTab() {
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-white text-xs font-medium">
-                    {uploadingId === style.id ? t.nailStyles.uploading : t.nailStyles.changePhoto}
-                  </span>
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                  </svg>
                 </div>
               </div>
 
