@@ -1,7 +1,26 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useAdminT } from "@/components/admin-locale-context";
+
+// ── Shared types & constants ───────────────────────────────────────────────────
+
+interface NailStyle {
+  id: number;
+  name: string;
+  description: string;
+  category: string;
+  prompt: string;
+  thumbnailUrl: string | null;
+  color: string | null;
+  acabado: string | null;
+  forma: string | null;
+  estilo: string | null;
+  badge: string | null;
+  discountPercent: number | null;
+  active: boolean;
+  sortOrder: number;
+}
 
 interface StyleForm {
   name: string;
@@ -82,42 +101,373 @@ const EMPTY_FORM: StyleForm = {
   badge: "", discountPercent: "", sortOrder: 0,
 };
 
+const BADGE_COLORS: Record<string, string> = {
+  Nuevo: "bg-emerald-500",
+  Promo: "bg-red-500",
+  Temporada: "bg-purple-500",
+  Popular: "bg-orange-500",
+  Limitado: "bg-gray-800",
+};
+
+// ── Root component ─────────────────────────────────────────────────────────────
+
 export function AdminLabTab() {
   const t = useAdminT();
   const [activeSection, setActiveSection] = useState<"generate" | "manual">("generate");
+  const [recentStyles, setRecentStyles] = useState<NailStyle[]>([]);
+
+  const loadRecent = useCallback(async () => {
+    const res = await fetch("/api/admin/nail-styles");
+    if (!res.ok) return;
+    const all: NailStyle[] = await res.json();
+    // Sort by id desc to get most recently created first
+    setRecentStyles(all.sort((a, b) => b.id - a.id).slice(0, 20));
+  }, []);
+
+  useEffect(() => { loadRecent(); }, [loadRecent]);
 
   return (
-    <div className="space-y-6">
-      {/* Section toggle */}
-      <div className="flex gap-2 p-1 bg-gray-100 rounded-xl w-fit">
-        <button
-          onClick={() => setActiveSection("generate")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            activeSection === "generate"
-              ? "bg-white text-foreground shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          ✦ {t.nailStyles.generateVariants}
-        </button>
-        <button
-          onClick={() => setActiveSection("manual")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            activeSection === "manual"
-              ? "bg-white text-foreground shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          + {t.nailStyles.addNew}
-        </button>
+    <div className="space-y-8">
+      {/* ── Creation panel ── */}
+      <div className="space-y-4">
+        <div className="flex gap-2 p-1 bg-gray-100 rounded-xl w-fit">
+          <button
+            onClick={() => setActiveSection("generate")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeSection === "generate"
+                ? "bg-white text-foreground shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            ✦ {t.nailStyles.generateVariants}
+          </button>
+          <button
+            onClick={() => setActiveSection("manual")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeSection === "manual"
+                ? "bg-white text-foreground shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            + {t.nailStyles.addNew}
+          </button>
+        </div>
+
+        {activeSection === "generate" ? (
+          <div className="p-5 rounded-2xl border border-accent-light/30 bg-cream/30">
+            <GenerateVariantsPanel onCreated={loadRecent} />
+          </div>
+        ) : (
+          <ManualCreateForm onCreated={loadRecent} />
+        )}
       </div>
 
-      {activeSection === "generate" ? (
-        <div className="p-5 rounded-2xl border border-accent-light/30 bg-cream/30">
-          <GenerateVariantsPanel />
+      {/* ── Recent designs strip ── */}
+      <RecentStrip styles={recentStyles} onReload={loadRecent} />
+    </div>
+  );
+}
+
+// ── Recent designs strip ───────────────────────────────────────────────────────
+
+function RecentStrip({ styles, onReload }: { styles: NailStyle[]; onReload: () => void }) {
+  const t = useAdminT();
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState<StyleForm>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [uploadingId, setUploadingId] = useState<number | null>(null);
+  const [imageTargetId, setImageTargetId] = useState<number | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  function startEdit(style: NailStyle) {
+    if (editingId === style.id) { setEditingId(null); return; }
+    setEditingId(style.id);
+    setForm({
+      name: style.name,
+      description: style.description,
+      category: style.category,
+      prompt: style.prompt,
+      color: style.color ?? "",
+      acabado: style.acabado ?? "",
+      forma: style.forma ?? "",
+      estilo: style.estilo ?? "",
+      badge: style.badge ?? "",
+      discountPercent: style.discountPercent != null ? String(style.discountPercent) : "",
+      sortOrder: style.sortOrder,
+    });
+  }
+
+  async function handleSave() {
+    if (!editingId) return;
+    setSaving(true);
+    try {
+      const payload = {
+        ...form,
+        discountPercent: form.discountPercent !== "" ? parseInt(form.discountPercent) : null,
+        color: form.color || null,
+        acabado: form.acabado || null,
+        forma: form.forma || null,
+        estilo: form.estilo || null,
+        badge: form.badge || null,
+      };
+      await fetch(`/api/admin/nail-styles/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      setEditingId(null);
+      onReload();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(style: NailStyle) {
+    if (!confirm(t.nailStyles.deleteConfirm.replace("{name}", style.name))) return;
+    await fetch(`/api/admin/nail-styles/${style.id}`, { method: "DELETE" });
+    if (editingId === style.id) setEditingId(null);
+    onReload();
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!imageTargetId || !e.target.files?.[0]) return;
+    setUploadingId(imageTargetId);
+    const formData = new FormData();
+    formData.append("image", e.target.files[0]);
+    await fetch(`/api/admin/nail-styles/${imageTargetId}/image`, { method: "POST", body: formData });
+    setUploadingId(null);
+    setImageTargetId(null);
+    e.target.value = "";
+    onReload();
+  }
+
+  function triggerImageUpload(id: number) {
+    setImageTargetId(id);
+    imageInputRef.current?.click();
+  }
+
+  if (styles.length === 0) return null;
+
+  const editingStyle = styles.find((s) => s.id === editingId) ?? null;
+
+  return (
+    <div>
+      <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+
+      {/* Divider + heading */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="h-px flex-1 bg-gray-100" />
+        <p className="text-xs font-medium text-gray-400 uppercase tracking-[0.2em]">Últimos diseños</p>
+        <div className="h-px flex-1 bg-gray-100" />
+      </div>
+
+      {/* Horizontal scroll strip */}
+      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+        {styles.map((style) => {
+          const isActive = editingId === style.id;
+          return (
+            <div
+              key={style.id}
+              className={`flex-shrink-0 w-28 rounded-xl border overflow-hidden transition-all ${
+                isActive
+                  ? "border-accent/50 ring-2 ring-accent/20"
+                  : "border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              {/* Thumbnail */}
+              <div
+                className="relative w-28 h-36 bg-gray-50 cursor-pointer group"
+                onClick={() => startEdit(style)}
+              >
+                {style.thumbnailUrl ? (
+                  <img src={style.thumbnailUrl} alt={style.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-200">
+                    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 001.5-1.5V5.25a1.5 1.5 0 00-1.5-1.5H3.75a1.5 1.5 0 00-1.5 1.5v14.25c0 .828.672 1.5 1.5 1.5z" />
+                    </svg>
+                  </div>
+                )}
+                {style.badge && (
+                  <div className={`absolute top-1.5 left-1.5 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${BADGE_COLORS[style.badge] ?? "bg-gray-600"}`}>
+                    {style.badge}
+                  </div>
+                )}
+                {/* Edit hint overlay */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Name + actions */}
+              <div className="px-2 py-1.5">
+                <p className="text-[11px] font-medium text-gray-700 truncate leading-tight mb-1.5">{style.name}</p>
+                <div className="flex items-center justify-between gap-0.5">
+                  {/* Upload photo */}
+                  <button
+                    onClick={() => triggerImageUpload(style.id)}
+                    className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                    title={t.nailStyles.changePhoto}
+                  >
+                    {uploadingId === style.id ? (
+                      <div className="w-3 h-3 border border-accent/40 border-t-accent rounded-full animate-spin" />
+                    ) : (
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                  </button>
+                  {/* Edit toggle */}
+                  <button
+                    onClick={() => startEdit(style)}
+                    className={`p-1 rounded transition-colors ${isActive ? "bg-accent/10 text-accent" : "hover:bg-gray-100 text-gray-400 hover:text-gray-600"}`}
+                    title={t.nailStyles.edit}
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                    </svg>
+                  </button>
+                  {/* Delete */}
+                  <button
+                    onClick={() => handleDelete(style)}
+                    className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                    title={t.nailStyles.delete}
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Inline edit form — appears below the strip when a card is selected */}
+      {editingStyle && (
+        <div className="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium text-gray-700 text-sm">
+              {t.nailStyles.editTitle}: <span className="text-accent-dark">{editingStyle.name}</span>
+            </h3>
+            <button onClick={() => setEditingId(null)} className="text-gray-400 hover:text-gray-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Name + Category */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.name}</label>
+              <input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.category}</label>
+              <select
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+              >
+                {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.description}</label>
+            <input
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+
+          {/* Classification */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.style}</label>
+              <select value={form.estilo} onChange={(e) => setForm({ ...form, estilo: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                {ESTILOS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.color}</label>
+              <select value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                {COLORES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.finish}</label>
+              <select value={form.acabado} onChange={(e) => setForm({ ...form, acabado: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                {ACABADOS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.shape}</label>
+              <select value={form.forma} onChange={(e) => setForm({ ...form, forma: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                {FORMAS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Badge + discount + order */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.badge}</label>
+              <select value={form.badge} onChange={(e) => setForm({ ...form, badge: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                {BADGES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.discount}</label>
+              <input type="number" min={0} max={100} value={form.discountPercent} onChange={(e) => setForm({ ...form, discountPercent: e.target.value })} placeholder="0" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t.nailStyles.order}</label>
+              <input type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: parseInt(e.target.value) || 0 })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+          </div>
+
+          {/* Prompt */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">
+              {t.nailStyles.aiPrompt}{" "}
+              <span className="text-gray-400 font-normal">({t.nailStyles.aiPromptDesc})</span>
+            </label>
+            <textarea
+              value={form.prompt}
+              onChange={(e) => setForm({ ...form, prompt: e.target.value })}
+              rows={2}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none"
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={handleSave}
+              disabled={saving || !form.name || !form.prompt}
+              className="px-5 py-2 bg-accent text-white rounded-lg text-sm hover:bg-accent-dark disabled:opacity-50 transition-colors"
+            >
+              {saving ? t.nailStyles.saving : t.nailStyles.save}
+            </button>
+            <button
+              onClick={() => setEditingId(null)}
+              className="px-5 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-100 transition-colors"
+            >
+              {t.nailStyles.cancel}
+            </button>
+          </div>
         </div>
-      ) : (
-        <ManualCreateForm />
       )}
     </div>
   );
@@ -125,7 +475,7 @@ export function AdminLabTab() {
 
 // ── AI generation panel ────────────────────────────────────────────────────────
 
-function GenerateVariantsPanel() {
+function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
   const t = useAdminT();
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
@@ -145,7 +495,6 @@ function GenerateVariantsPanel() {
     const reader = new FileReader();
     reader.onloadend = () => setPreview(reader.result as string);
     reader.readAsDataURL(f);
-
     setClassifying(true);
     try {
       const fd = new FormData();
@@ -183,6 +532,7 @@ function GenerateVariantsPanel() {
     setPublishLoading(false);
     alert("Diseño publicado. Aparecerá en el carrusel.");
     setStatus("idle"); setFile(null); setPreview(null); setName(""); setVariants([]); setStyleId(null);
+    onCreated();
   };
 
   const BASES_LABELS: Record<string, string> = {
@@ -262,7 +612,7 @@ function GenerateVariantsPanel() {
 
 // ── Manual create form ─────────────────────────────────────────────────────────
 
-function ManualCreateForm() {
+function ManualCreateForm({ onCreated }: { onCreated: () => void }) {
   const t = useAdminT();
   const [form, setForm] = useState<StyleForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -329,6 +679,7 @@ function ManualCreateForm() {
       setCreateImageFile(null);
       setDone(true);
       setTimeout(() => setDone(false), 3000);
+      onCreated();
     } finally {
       setSaving(false);
     }
@@ -340,7 +691,7 @@ function ManualCreateForm() {
 
       {done && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 text-sm text-emerald-700">
-          ✓ Diseño creado. Puedes verlo en <a href="/dashboard/catalog" className="underline">Diseños</a>.
+          ✓ Diseño creado — aparece abajo en la tira de últimos diseños.
         </div>
       )}
 
