@@ -484,6 +484,8 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
     const statusRes = await fetch(`/api/admin/catalog/status/${data.jobId}`);
     const statusData = await statusRes.json();
     setVariants(statusData.variants ?? []);
+    // Add to recent strip immediately after generating
+    onCreated();
   };
 
   const handlePublish = async () => {
@@ -505,43 +507,35 @@ function GenerateVariantsPanel({ onCreated }: { onCreated: () => void }) {
 
   return (
     <div className="space-y-5">
-      {/* Photo + name + button — single row */}
-      <div className="flex gap-3 items-center">
-        {/* Photo picker */}
+      <div className="flex gap-4 items-center">
+        {/* Photo picker — bigger */}
         <div
-          className="w-20 h-28 rounded-xl border-2 border-dashed border-accent-light/40 flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors overflow-hidden flex-shrink-0"
+          className="relative w-32 aspect-[2/3] rounded-xl border-2 border-dashed border-accent-light/40 flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors overflow-hidden flex-shrink-0"
           onClick={() => fileRef.current?.click()}
         >
-          {preview ? <img src={preview} alt="preview" className="w-full h-full object-cover" /> : (
-            <span className="text-[10px] text-foreground/30 text-center px-1 leading-tight">+ {t.nailStyles.referencePhoto}</span>
+          {preview ? (
+            <img src={preview} alt="preview" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-xs text-foreground/30 text-center px-2 leading-relaxed">
+              + {t.nailStyles.referencePhoto}
+            </span>
+          )}
+          {classifying && (
+            <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center gap-2">
+              <div className="w-5 h-5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+              <span className="text-[10px] text-accent-dark">{t.nailStyles.analyzing}</span>
+            </div>
           )}
         </div>
 
-        {/* Name + button */}
-        <div className="flex flex-col gap-2 flex-1 min-w-0">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder={classifying ? t.nailStyles.analyzingDesign : t.nailStyles.designName}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={classifying}
-              className="w-full text-sm border border-accent-light/30 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-accent/50 disabled:bg-gray-50 disabled:text-gray-400 pr-8"
-            />
-            {classifying && (
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                <div className="w-3.5 h-3.5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-              </div>
-            )}
-          </div>
-          <button
-            onClick={handleGenerate}
-            disabled={!file || status === "generating"}
-            className="self-start px-5 py-2 bg-foreground text-white text-sm rounded-lg hover:bg-accent-dark transition-colors disabled:opacity-50 whitespace-nowrap"
-          >
-            {status === "generating" ? t.nailStyles.generating : t.nailStyles.generate4}
-          </button>
-        </div>
+        {/* Generate button */}
+        <button
+          onClick={handleGenerate}
+          disabled={!file || classifying || status === "generating"}
+          className="px-5 py-2.5 bg-foreground text-white text-sm rounded-xl hover:bg-accent-dark transition-colors disabled:opacity-40 whitespace-nowrap font-medium"
+        >
+          {status === "generating" ? t.nailStyles.generating : t.nailStyles.generate4}
+        </button>
       </div>
       <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
 
