@@ -25,8 +25,7 @@ interface TextOverlay {
   endFrame: number;
 }
 
-function getTextOverlays(): TextOverlay[] {
-  const hero = useSiteT().hero;
+function getTextOverlays(hero: { word1: string; word2: string }): TextOverlay[] {
   return [
     {
       text: hero.word1,
@@ -182,6 +181,7 @@ export default function ChipscrollHero() {
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const imagesRef    = useRef<HTMLImageElement[]>([]);
   const frameRef     = useRef(0);
+  const hero = useSiteT().hero;
 
   const [isLoading,    setIsLoading]    = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
@@ -190,8 +190,9 @@ export default function ChipscrollHero() {
 
   // Initialize locale-aware text overlays on client
   useEffect(() => {
-    setTextOverlays(getTextOverlays());
-  }, []);
+    setTextOverlays(getTextOverlays(hero));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hero.word1, hero.word2]);
 
   // Pre-load all frames
   useEffect(() => {
