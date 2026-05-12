@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "../../../../auth";
 import { db } from "@/db";
 import { loyaltyPoints } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -29,6 +30,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user || (session.user.role !== "admin" && session.user.role !== "superadmin")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { clientPhone, clientName, pointsToAdd } = await request.json();
 
   if (!clientPhone || !clientName || !pointsToAdd) {

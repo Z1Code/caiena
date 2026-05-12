@@ -23,6 +23,10 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return NextResponse.json({ error: "Invalid date format" }, { status: 400 });
+  }
+
   const requestedDate = new Date(dateStr + "T12:00:00");
   const now = new Date();
   const today = startOfDay(now);

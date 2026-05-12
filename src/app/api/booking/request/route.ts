@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  const token    = randomBytes(5).toString("hex").toUpperCase(); // e.g. "A1B2C3D4E5"
+  const token = randomBytes(16).toString("hex").toUpperCase();
   const expiresAt = addHours(new Date(), 2);
 
   await db.insert(bookingRequests).values({
@@ -44,8 +44,11 @@ export async function POST(req: Request) {
   return NextResponse.json({ token, waUrl });
 }
 
-/** GET ?token=xxx — poll for phone_linked status */
+/** GET ?token=xxx — poll for phone_linked status (requires auth + token ownership) */
 export async function GET(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const token = req.nextUrl.searchParams.get("token");
   if (!token) return NextResponse.json({ error: "Missing token" }, { status: 400 });
 
@@ -54,7 +57,12 @@ export async function GET(req: NextRequest) {
     .from(bookingRequests)
     .where(and(eq(bookingRequests.token, token), gt(bookingRequests.expiresAt, new Date())));
 
-  if (!row)  return NextResponse.json({ expired: true });
+  if (!row) return NextResponse.json({ expired: true });
+
+  // Ensure the token belongs to the authenticated user
+  if (row.googleId !== session.user.id) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   return NextResponse.json({
     status: row.status,

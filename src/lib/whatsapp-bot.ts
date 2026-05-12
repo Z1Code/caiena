@@ -28,6 +28,7 @@ import {
   whatsappLinkTokens,
   userProfiles,
   bookingRequests,
+  staff,
 } from "@/db/schema";
 import { eq, and, gte, lte, gt, isNull, inArray } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
@@ -544,48 +545,64 @@ async function handleConfirm(to: string, svcIdStr: string, dateStr: string, hhmm
   }
 
   const startTime = fromHHmm(hhmm);
-
-  // Re-check availability to prevent double-booking
-  const slots = await getAvailableSlots(dateStr, service.durationMinutes);
-  if (!slots.includes(startTime)) {
-    await sendText(
-      to,
-      `Lo siento, ese horario ya no está disponible. Por favor elige otro:`
-    );
-    await handleSvcSelected(to, service.id);
-    return;
-  }
-
   const endTime = format(
     addMinutes(parse(startTime, "HH:mm", new Date()), service.durationMinutes),
     "HH:mm"
   );
-
   const bookingId = uuidv4();
-  const calendarEvent = buildCalendarEvent(
-    { clientName: knownUser.name, date: dateStr, startTime, endTime, notes: "Reserva vía WhatsApp" },
-    service
-  );
 
-  let googleEventId: string | null = null;
+  // Atomic slot check + insert in a single transaction to prevent double-booking
+  let booked = false;
+  await db.transaction(async (tx) => {
+    const [existing, blocked] = await Promise.all([
+      tx
+        .select({ startTime: bookings.startTime, endTime: bookings.endTime })
+        .from(bookings)
+        .where(and(eq(bookings.date, dateStr), eq(bookings.status, "confirmed"))),
+      tx
+        .select({ startTime: blockedTimes.startTime, endTime: blockedTimes.endTime })
+        .from(blockedTimes)
+        .where(eq(blockedTimes.date, dateStr)),
+    ]);
+
+    const conflict = [...existing, ...blocked].some((b) =>
+      timesOverlap(startTime, endTime, b.startTime, b.endTime)
+    );
+    if (conflict) return; // slot taken — booked stays false
+
+    await tx.insert(bookings).values({
+      id: bookingId,
+      serviceId: service.id,
+      clientName: knownUser.name,
+      clientPhone: to,
+      date: dateStr,
+      startTime,
+      endTime,
+      notes: "Reserva vía WhatsApp",
+      status: "confirmed",
+    });
+    booked = true;
+  });
+
+  if (!booked) {
+    await sendText(to, `Lo siento, ese horario ya no está disponible. Por favor elige otro:`);
+    await handleSvcSelected(to, service.id);
+    return;
+  }
+
+  // Google Calendar — best-effort, after confirmed booking
   try {
-    googleEventId = await createGoogleCalendarEvent(calendarEvent);
+    const calendarEvent = buildCalendarEvent(
+      { clientName: knownUser.name, date: dateStr, startTime, endTime, notes: "Reserva vía WhatsApp" },
+      service
+    );
+    const googleEventId = await createGoogleCalendarEvent(calendarEvent);
+    if (googleEventId) {
+      await db.update(bookings).set({ googleEventId }).where(eq(bookings.id, bookingId));
+    }
   } catch {
     // Google Calendar not configured — continue
   }
-
-  await db.insert(bookings).values({
-    id: bookingId,
-    serviceId: service.id,
-    clientName: knownUser.name,
-    clientPhone: to,
-    date: dateStr,
-    startTime,
-    endTime,
-    googleEventId,
-    notes: "Reserva vía WhatsApp",
-    status: "confirmed",
-  });
 
   await sendText(
     to,
@@ -602,6 +619,16 @@ async function handleRemindConfirm(to: string, bookingId: string, party: string)
   if (!booking || booking.status === "cancelled") {
     await sendText(to, "Esta cita ya fue cancelada.");
     return;
+  }
+
+  // Verify sender is authorized for this action
+  if (party === "client" && to !== booking.clientPhone) return;
+  if (party === "staff") {
+    const [member] = await db
+      .select({ id: staff.id })
+      .from(staff)
+      .where(and(eq(staff.phone, to), eq(staff.active, true)));
+    if (!member) return;
   }
 
   if (party === "staff") {
@@ -630,6 +657,16 @@ async function handleRemindCancel(to: string, bookingId: string, party: string):
   if (!booking || booking.status === "cancelled") {
     await sendText(to, "Esta cita ya no está activa.");
     return;
+  }
+
+  // Verify sender is authorized to cancel
+  if (party === "client" && to !== booking.clientPhone) return;
+  if (party === "staff") {
+    const [member] = await db
+      .select({ id: staff.id })
+      .from(staff)
+      .where(and(eq(staff.phone, to), eq(staff.active, true)));
+    if (!member) return;
   }
 
   await db

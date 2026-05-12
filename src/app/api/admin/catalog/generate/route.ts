@@ -3,7 +3,8 @@ import { auth } from "../../../../../../auth";
 import { db } from "@/db";
 import { nailStyles, nailStyleVariants, catalogQueue } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { readFileSync, writeFileSync, mkdirSync } from "fs";
+import { readFile, writeFile, mkdir } from "fs/promises";
+import { mkdirSync } from "fs";
 import { createHash } from "crypto";
 import { join } from "path";
 
@@ -184,7 +185,7 @@ Professional luxury catalog quality — sharp, editorial, Dior/Chanel level.`;
   for (const baseId of BASES) {
     const baseFile = BASE_FILES[baseId];
     try {
-      const baseBuf = readFileSync(baseFile);
+      const baseBuf = await readFile(baseFile);
       const baseB64 = baseBuf.toString("base64");
 
       const parts = anchorB64
@@ -211,7 +212,7 @@ Professional luxury catalog quality — sharp, editorial, Dior/Chanel level.`;
       const relPath = `/catalog-preview/${style.id}/${baseId}.jpg`;
 
       if (result?.type === "image") {
-        writeFileSync(outPath, Buffer.from(result.data, "base64"));
+        await writeFile(outPath, Buffer.from(result.data, "base64"));
         await db.insert(nailStyleVariants).values({ styleId: style.id, baseId, imagePath: relPath, status: "done" });
         if (!firstPath) firstPath = relPath;
         if (!anchorB64) anchorB64 = result.data;

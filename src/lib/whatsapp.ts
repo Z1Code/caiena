@@ -104,7 +104,7 @@ export function verifyWebhookSignature(
   signature: string
 ): boolean {
   const secret = process.env.KAPSO_WEBHOOK_SECRET;
-  if (!secret) return true; // not configured — skip in dev
+  if (!secret) return false; // secret not configured — deny all requests
 
   const expectedHex = crypto
     .createHmac("sha256", secret)

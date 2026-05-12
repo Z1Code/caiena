@@ -9,6 +9,7 @@ import {
   jsonb,
   primaryKey,
   unique,
+  index,
 } from "drizzle-orm/pg-core";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -77,7 +78,11 @@ export const bookings = pgTable("bookings", {
   cancelledBy: text("cancelled_by"), // staff | client | system | manager
   reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (t) => [
+  index("bookings_client_phone_idx").on(t.clientPhone),
+  index("bookings_date_status_idx").on(t.date, t.status),
+  index("bookings_status_idx").on(t.status),
+]);
 
 export const blockedTimes = pgTable("blocked_times", {
   id: serial("id").primaryKey(),
@@ -134,7 +139,9 @@ export const whatsappSessions = pgTable("whatsapp_sessions", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (t) => [
+  index("wa_sessions_phone_idx").on(t.phone),
+]);
 
 // Identified WhatsApp users (via Google OAuth or WhatsApp OTP)
 export const waUsers = pgTable("wa_users", {
@@ -160,7 +167,10 @@ export const userProfiles = pgTable("user_profiles", {
   handPhotoUrl: text("hand_photo_url"), // stored hand photo for try-on /uploads/hands/xxx.jpg
   linkedAt: timestamp("linked_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-})
+}, (t) => [
+  index("user_profiles_google_id_idx").on(t.googleId),
+  index("user_profiles_wa_phone_idx").on(t.whatsappPhone),
+])
 
 // Short-lived tokens linking a WA session to a Google OAuth flow
 export const whatsappAuthTokens = pgTable("whatsapp_auth_tokens", {
@@ -326,7 +336,9 @@ export const nailStyles = pgTable("nail_styles", {
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   published: boolean("published").notNull().default(false),
-});
+}, (t) => [
+  index("nail_styles_published_idx").on(t.published),
+]);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NAIL STYLE VARIANTS — one row per (design × base pose) image
