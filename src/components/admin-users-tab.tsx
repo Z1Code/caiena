@@ -86,7 +86,9 @@ export function AdminUsersTab() {
                 {/* Role badge */}
                 <span
                   className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                    user.role === "admin"
+                    user.role === "superadmin"
+                      ? "bg-purple-100 text-purple-700"
+                      : user.role === "admin"
                       ? "bg-accent/10 text-accent-dark"
                       : "bg-gray-100 text-gray-500"
                   }`}
@@ -96,7 +98,7 @@ export function AdminUsersTab() {
 
                 {/* Actions */}
                 <div className="flex gap-2 shrink-0">
-                  {user.role === "user" ? (
+                  {user.role === "superadmin" ? null : user.role === "user" ? (
                     <button
                       onClick={() => changeRole(user.id, "admin")}
                       disabled={updating === user.id}

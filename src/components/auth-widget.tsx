@@ -3,11 +3,13 @@
 import { useSession, signIn, signOut } from "next-auth/react"
 import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
+import { getT, getClientLocale } from "@/i18n"
 
 export function AuthWidget() {
   const { data: session, status } = useSession()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const t = getT(getClientLocale()).nav
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -30,7 +32,7 @@ export function AuthWidget() {
         onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
         className="shimmer-btn ml-4 bg-foreground text-white text-xs px-6 py-2.5 rounded-full tracking-[0.1em] uppercase hover:bg-accent-dark transition-colors"
       >
-        Iniciar sesión
+        {t.signIn}
       </button>
     )
   }
@@ -75,7 +77,7 @@ export function AuthWidget() {
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 018.25 20.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25A2.25 2.25 0 0113.5 8.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
             </svg>
-            Mi panel
+            {t.myDashboard}
           </a>
           <div className="border-t border-accent-light/20 my-1" />
           <button
@@ -85,7 +87,7 @@ export function AuthWidget() {
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
             </svg>
-            Cerrar sesión
+            {t.signOut}
           </button>
         </div>
       )}

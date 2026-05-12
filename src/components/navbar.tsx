@@ -2,14 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { AuthWidget } from "./auth-widget";
-
-const links = [
-  { href: "/#servicios", label: "Servicios" },
-  { href: "/prueba-virtual", label: "Prueba IA" },
-  { href: "/generador", label: "Generador" },
-  { href: "/gift-cards", label: "Gift Cards" },
-  { href: "/reservar", label: "Reservar" },
-];
+import { LanguageSwitcher } from "./language-switcher";
+import { getT, getClientLocale } from "@/i18n";
 
 function CaienaLogo() {
   return (
@@ -56,12 +50,25 @@ function CaienaLogo() {
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [t, setT] = useState(() => getT(getClientLocale()));
+
+  useEffect(() => {
+    setT(getT(getClientLocale()));
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const links = [
+    { href: "/#servicios", label: t.nav.services },
+    { href: "/prueba-virtual", label: t.nav.aiTryOn },
+    { href: "/generador", label: t.nav.generator },
+    { href: "/gift-cards", label: t.nav.giftCards },
+    { href: "/reservar", label: t.nav.book },
+  ];
 
   return (
     <nav
@@ -89,6 +96,7 @@ export function Navbar() {
                 {link.label}
               </a>
             ))}
+            <LanguageSwitcher className="ml-2 text-foreground/60 hover:text-foreground" />
             <AuthWidget />
           </div>
 
@@ -96,7 +104,7 @@ export function Navbar() {
           <button
             onClick={() => setOpen(!open)}
             className="md:hidden p-2 text-foreground/60"
-            aria-label="Toggle menu"
+            aria-label={t.nav.toggleMenu}
           >
             <div className="w-5 flex flex-col gap-1.5">
               <span className={`block h-px bg-current transition-all duration-300 ${open ? "rotate-45 translate-y-[4px]" : ""}`} />
@@ -125,15 +133,18 @@ export function Navbar() {
                 onClick={() => setOpen(false)}
                 className="bg-foreground text-white text-sm px-5 py-3 rounded-full text-center mt-3 tracking-wide"
               >
-                Agendar
+                {t.nav.bookCta}
               </a>
               <a
                 href="/dashboard"
                 onClick={() => setOpen(false)}
                 className="border border-foreground/20 text-foreground/70 text-sm px-5 py-3 rounded-full text-center mt-1 tracking-wide"
               >
-                Mi panel
+                {t.nav.myDashboard}
               </a>
+              <div className="flex justify-center mt-3">
+                <LanguageSwitcher className="text-foreground/60" />
+              </div>
             </div>
           </div>
         )}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { SpringReveal, ScrollReveal } from "@/components/scroll-reveal";
+import { getT, getClientLocale } from "@/i18n";
 
 interface Review {
   id: number;
@@ -13,6 +14,7 @@ interface Review {
 
 export function Testimonials() {
   const [reviews, setReviews] = useState<Review[]>([]);
+  const t = getT(getClientLocale()).testimonials;
 
   useEffect(() => {
     fetch("/api/reviews")
@@ -27,9 +29,9 @@ export function Testimonials() {
     <section className="py-24 bg-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal className="text-center mb-16">
-          <p className="text-accent-dark tracking-[0.3em] uppercase text-xs mb-3">Testimonios</p>
+          <p className="text-accent-dark tracking-[0.3em] uppercase text-xs mb-3">{t.label}</p>
           <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-foreground">
-            Lo que dicen nuestras clientas
+            {t.heading}
           </h2>
           <div className="w-16 h-px bg-accent mx-auto mt-4" />
         </ScrollReveal>

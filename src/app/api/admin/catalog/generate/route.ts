@@ -25,7 +25,7 @@ async function callGemini(parts: unknown[], preferImage: boolean) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts }],
-          generationConfig: { responseModalities: preferImage ? ["TEXT", "IMAGE"] : ["TEXT"] },
+          generationConfig: { responseModalities: preferImage ? ["TEXT", "IMAGE"] : ["TEXT"], temperature: preferImage ? 0.2 : 0.4 },
           safetySettings: [
             { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
             { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
@@ -74,8 +74,17 @@ export async function POST(req: NextRequest) {
 
   // Dedup
   const existing = await db.select().from(catalogQueue).where(eq(catalogQueue.sourceHash, hash));
-  if (existing.length > 0 && existing[0].status === "done") {
-    return NextResponse.json({ jobId: existing[0].id, styleId: existing[0].styleId, status: "done" });
+  if (existing.length > 0) {
+    if (existing[0].status === "done") {
+      return NextResponse.json({ jobId: existing[0].id, styleId: existing[0].styleId, status: "done" });
+    }
+    // Previous attempt failed or is stuck — clean up and retry fresh
+    const oldStyleId = existing[0].styleId;
+    await db.delete(catalogQueue).where(eq(catalogQueue.sourceHash, hash));
+    if (oldStyleId) {
+      await db.delete(nailStyleVariants).where(eq(nailStyleVariants.styleId, oldStyleId));
+      await db.delete(nailStyles).where(eq(nailStyles.id, oldStyleId));
+    }
   }
 
   // Create nailStyle
@@ -99,12 +108,13 @@ export async function POST(req: NextRequest) {
 
   const imgB64 = buf.toString("base64");
   const mimeType = file.type || "image/jpeg";
-  const outDir = join(process.cwd(), "public/catalog-preview", String(style.id));
+  const catalogBase = process.env.CATALOG_PREVIEW_DIR ?? join(process.cwd(), "public/catalog-preview");
+  const outDir = join(catalogBase, String(style.id));
   mkdirSync(outDir, { recursive: true });
 
   // Classify design to extract metadata (same as batch pipeline)
   const classifyPrompt = `Analyze this nail design photo and return ONLY a JSON object (no markdown, no explanation) with these fields:
-{"name":"short elegant name in Spanish for this nail style (3-5 words, title case)","color":"one of: nude|rosa|rojo|burdeos|blanco|negro|azul|verde|morado|lila|coral|multicolor|plateado|dorado|gris|beige","acabado":"one of: glossy|matte|chrome|glitter|satinado","forma":"one of: cuadrada|redonda|oval|almendra|stiletto|coffin","estilo":"one of: french|solid|floral|geometrico|glitter_foil|ombre|chrome|minimalista|nail_art"}`;
+{"name":"short elegant name in English for this nail style (3-5 words, title case)","color":"one of: nude|rosa|rojo|burdeos|blanco|negro|azul|verde|morado|lila|coral|multicolor|plateado|dorado|gris|beige","acabado":"one of: glossy|matte|chrome|glitter|satinado","forma":"one of: cuadrada|redonda|oval|almendra|stiletto|coffin","estilo":"one of: french|solid|floral|geometrico|glitter_foil|ombre|chrome|minimalista|nail_art"}`;
   const classifyResult = await callGemini([{ inlineData: { mimeType, data: imgB64 } }, { text: classifyPrompt }], false);
   let meta: { name?: string; color?: string; acabado?: string; forma?: string; estilo?: string } = {};
   if (classifyResult?.type === "text") {
@@ -114,13 +124,17 @@ export async function POST(req: NextRequest) {
     await db.update(nailStyles).set({ name: meta.name, color: meta.color ?? null, acabado: meta.acabado ?? null, forma: meta.forma ?? null, estilo: meta.estilo ?? null }).where(eq(nailStyles.id, style.id));
   }
 
-  const PROMPT = `You are a professional nail art retouching artist for a luxury nail catalog.
+  const PROMPT_FIRST = `You are a professional nail art retouching artist for a luxury nail catalog.
 
 TASK: Apply the nail design from the REFERENCE PHOTO onto the bare nails in the BASE PHOTO.
 
-REFERENCE PHOTO (second image): Extract ONLY the nail color, pattern, art, and finish. Ignore hand shape, skin tone, background, jewelry, accessories.
+REFERENCE PHOTO (second image): Extract ONLY the nail color, pattern, art, and finish.
+DO NOT copy the nail shape, nail length, or nail edge style from the reference photo.
+Ignore everything except: color, pattern, art motifs, and finish (glossy/matte/chrome/glitter).
 
-BASE PHOTO (first image): Professional studio hand photo with bare natural nails on pure black background. Your canvas.
+BASE PHOTO (first image): This is your canvas. It is a professional studio hand photo on pure black background.
+PRESERVE EXACTLY: the nail shape, nail length, nail edge (square/round/oval/almond/stiletto/coffin), hand pose, skin tone, background, lighting.
+The nail shape in the BASE PHOTO is the final shape — do not alter it under any circumstances.
 
 CRITICAL UNIFORMITY RULE — READ CAREFULLY:
 - Apply EXACTLY THE SAME design to EVERY SINGLE NAIL. All nails must look IDENTICAL.
@@ -130,24 +144,61 @@ CRITICAL UNIFORMITY RULE — READ CAREFULLY:
 - One hand pose = exactly 5 nails. Double-hand pose = exactly 10 nails. ALL uniform.
 - If the reference shows an accent nail, IGNORE that — apply the dominant design uniformly.
 
-Keep EVERYTHING else identical: pose, skin tone, background, lighting.
+Keep EVERYTHING else identical: pose, skin tone, background, lighting, nail shape/length.
 No jewelry, no rings, no accessories. No watermarks, no text.
 Professional luxury catalog photo quality — sharp, editorial, Dior/Chanel level.`;
+
+  const PROMPT_ANCHOR = `You are a professional nail art retouching artist for a luxury nail catalog.
+
+You have THREE images:
+1. BASE PHOTO (first image): Your canvas — a studio hand photo on pure black background.
+2. REFERENCE PHOTO (second image): The original nail design inspiration.
+3. ANCHOR IMAGE (third image): An already-approved generated result of this design on a different hand pose.
+
+YOUR TASK: Apply the nail design onto the BASE PHOTO so it matches the ANCHOR IMAGE as closely as possible.
+
+ANCHOR IS THE TRUTH — match it exactly:
+- Same exact color tone and saturation as the ANCHOR IMAGE.
+- Same finish intensity (glossy/matte/chrome/glitter level) as the ANCHOR IMAGE.
+- Same pattern style and scale as the ANCHOR IMAGE.
+- The ANCHOR IMAGE is your color and style reference — not the original REFERENCE PHOTO.
+
+BASE PHOTO rules (never break these):
+- PRESERVE the nail shape, nail length, nail edge, hand pose, skin tone, background, and lighting from the BASE PHOTO.
+- Do NOT alter the nail shape under any circumstances.
+
+CRITICAL UNIFORMITY:
+- Apply EXACTLY THE SAME design to EVERY SINGLE NAIL. All nails identical.
+- No accent nails. No bare nails. Every nail = same color, same pattern, same finish.
+- One hand = exactly 5 nails. Two hands = exactly 10 nails.
+
+No jewelry, no rings, no accessories. No watermarks, no text.
+Professional luxury catalog quality — sharp, editorial, Dior/Chanel level.`;
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   let firstPath: string | null = null;
   let allOk = true;
+  let anchorB64: string | null = null;
 
   for (const baseId of BASES) {
     const baseFile = BASE_FILES[baseId];
     try {
       const baseBuf = readFileSync(baseFile);
-      const parts = [
-        { inlineData: { mimeType: "image/jpeg", data: baseBuf.toString("base64") } },
-        { inlineData: { mimeType, data: imgB64 } },
-        { text: PROMPT },
-      ];
+      const baseB64 = baseBuf.toString("base64");
+
+      const parts = anchorB64
+        ? [
+            { inlineData: { mimeType: "image/jpeg", data: baseB64 } },
+            { inlineData: { mimeType, data: imgB64 } },
+            { inlineData: { mimeType: "image/jpeg", data: anchorB64 } },
+            { text: PROMPT_ANCHOR },
+          ]
+        : [
+            { inlineData: { mimeType: "image/jpeg", data: baseB64 } },
+            { inlineData: { mimeType, data: imgB64 } },
+            { text: PROMPT_FIRST },
+          ];
 
       // 3 attempts with 2s delay between retries, 2.5s between bases (matches batch pipeline)
       let result = null;
@@ -163,6 +214,7 @@ Professional luxury catalog photo quality — sharp, editorial, Dior/Chanel leve
         writeFileSync(outPath, Buffer.from(result.data, "base64"));
         await db.insert(nailStyleVariants).values({ styleId: style.id, baseId, imagePath: relPath, status: "done" });
         if (!firstPath) firstPath = relPath;
+        if (!anchorB64) anchorB64 = result.data;
       } else {
         await db.insert(nailStyleVariants).values({ styleId: style.id, baseId, imagePath: "", status: "error", errorMsg: "generation failed" });
         allOk = false;

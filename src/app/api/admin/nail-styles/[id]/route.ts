@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { nailStyles } from "@/db/schema";
+import { nailStyles, nailStyleVariants, catalogQueue } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "../../../../../../auth";
 import { unlink } from "fs/promises";
@@ -46,6 +46,10 @@ export async function DELETE(
   const { id } = await params;
   const styleId = parseInt(id);
   if (isNaN(styleId)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+
+  // Delete dependents first to satisfy FK constraints
+  await db.delete(catalogQueue).where(eq(catalogQueue.styleId, styleId));
+  await db.delete(nailStyleVariants).where(eq(nailStyleVariants.styleId, styleId));
 
   const [deleted] = await db
     .delete(nailStyles)

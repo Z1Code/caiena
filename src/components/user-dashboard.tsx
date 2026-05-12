@@ -6,6 +6,8 @@ import { BurnerNameModal } from "./burner-name-modal"
 import { DashboardCatalogClient } from "./catalog/DashboardCatalogClient"
 import Image from "next/image"
 import type { Session } from "next-auth"
+import { getLocale } from "@/i18n/locale"
+import { getT } from "@/i18n"
 
 const LOYALTY_MILESTONE = parseInt(process.env.LOYALTY_MILESTONE ?? "10", 10)
 const WHATSAPP_BUSINESS_PHONE = process.env.WHATSAPP_BUSINESS_PHONE ?? "12057940509"
@@ -17,6 +19,9 @@ function looksLikeBurner(name: string | null | undefined): boolean {
 }
 
 export async function UserDashboard({ session }: { session: Session }) {
+  const locale = await getLocale()
+  const t = getT(locale).dashboard
+
   const profile = await db.query.userProfiles.findFirst({
     where: eq(userProfiles.googleId, session.user.id),
   })
@@ -140,17 +145,17 @@ export async function UserDashboard({ session }: { session: Session }) {
             href="/"
             className="ml-auto text-xs text-foreground/40 hover:text-foreground/60 transition-colors"
           >
-            Volver al sitio
+            {t.backToSite}
           </a>
         </div>
 
         {/* Loyalty card */}
         <div className="glass-card rounded-2xl p-5 mb-6">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs text-muted tracking-widest uppercase">Tarjeta de lealtad</p>
+            <p className="text-xs text-muted tracking-widest uppercase">{t.loyaltyCard}</p>
             {cyclesCompleted > 0 && (
               <span className="text-xs bg-gold/20 text-amber-700 px-2 py-0.5 rounded-full font-medium">
-                ✨ {cyclesCompleted} recompensa{cyclesCompleted > 1 ? "s" : ""} canjeada{cyclesCompleted > 1 ? "s" : ""}
+                ✨ {cyclesCompleted} {cyclesCompleted > 1 ? t.rewardsRedeemed : t.rewardRedeemed}
               </span>
             )}
           </div>
@@ -169,17 +174,17 @@ export async function UserDashboard({ session }: { session: Session }) {
             ))}
           </div>
           {stampsInCurrentCycle === 0 && totalVisits === 0 ? (
-            <p className="text-sm text-foreground/50">¡Agenda tu primera cita para comenzar!</p>
+            <p className="text-sm text-foreground/50">{t.startFirst}</p>
           ) : stampsInCurrentCycle === 0 && totalVisits > 0 ? (
             <p className="text-sm text-accent-dark font-medium">
-              🎉 ¡Completaste {LOYALTY_MILESTONE} visitas! Habla con nosotros para reclamar tu recompensa.
+              {t.completedMilestone.replace("{n}", String(LOYALTY_MILESTONE))}
             </p>
           ) : (
             <p className="text-sm text-foreground/60">
-              {stampsInCurrentCycle} de {LOYALTY_MILESTONE} visitas —{" "}
-              <span className="text-foreground/80 font-medium">
-                te faltan {LOYALTY_MILESTONE - stampsInCurrentCycle} para tu recompensa
-              </span>
+              {t.stampsProgress
+                .replace("{done}", String(stampsInCurrentCycle))
+                .replace("{total}", String(LOYALTY_MILESTONE))
+                .replace("{remaining}", String(LOYALTY_MILESTONE - stampsInCurrentCycle))}
             </p>
           )}
         </div>
@@ -187,23 +192,23 @@ export async function UserDashboard({ session }: { session: Session }) {
         {/* Catalog carousel for design selection */}
         {catalogData.length > 0 && (
           <section className="mb-10">
-            <h2 className="font-serif text-2xl font-semibold text-foreground mb-2 px-6">Elige tu diseño</h2>
-            <p className="text-sm text-muted mb-4 px-6">Selecciona el estilo que quieres en tu próxima cita</p>
+            <h2 className="font-serif text-2xl font-semibold text-foreground mb-2 px-6">{t.chooseDesign}</h2>
+            <p className="text-sm text-muted mb-4 px-6">{t.chooseDesignSub}</p>
             <DashboardCatalogClient styles={catalogData} />
           </section>
         )}
 
         {/* Upcoming appointments */}
         <section className="mb-6">
-          <h2 className="font-serif text-lg font-semibold text-foreground mb-3">Próximas citas</h2>
+          <h2 className="font-serif text-lg font-semibold text-foreground mb-3">{t.upcomingAppointments}</h2>
           {upcomingBookings.length === 0 ? (
             <div className="glass-card rounded-2xl p-5 text-center">
-              <p className="text-sm text-foreground/50 mb-3">No tienes citas próximas</p>
+              <p className="text-sm text-foreground/50 mb-3">{t.noUpcoming}</p>
               <a
                 href="/reservar"
                 className="inline-block bg-foreground text-white text-xs px-6 py-2.5 rounded-full tracking-wide hover:bg-accent-dark transition-colors"
               >
-                Reservar
+                {t.book}
               </a>
             </div>
           ) : (
@@ -227,9 +232,9 @@ export async function UserDashboard({ session }: { session: Session }) {
 
         {/* History */}
         <section className="mb-6">
-          <h2 className="font-serif text-lg font-semibold text-foreground mb-3">Historial de visitas</h2>
+          <h2 className="font-serif text-lg font-semibold text-foreground mb-3">{t.visitHistory}</h2>
           {historyBookings.length === 0 ? (
-            <p className="text-sm text-foreground/50">Aún no tienes visitas registradas.</p>
+            <p className="text-sm text-foreground/50">{t.noHistory}</p>
           ) : (
             <div className="flex flex-col gap-2">
               {historyBookings.map((b) => (
@@ -244,7 +249,7 @@ export async function UserDashboard({ session }: { session: Session }) {
                     rel="noopener noreferrer"
                     className="text-xs text-green-600 hover:text-green-700 border border-green-200 hover:bg-green-50 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap"
                   >
-                    Repetir
+                    {t.repeat}
                   </a>
                 </div>
               ))}
@@ -257,7 +262,7 @@ export async function UserDashboard({ session }: { session: Session }) {
           href="/reservar"
           className="block w-full text-center bg-foreground text-white py-3.5 rounded-full text-sm tracking-wide hover:bg-accent-dark transition-colors"
         >
-          Nueva reserva
+          {t.newBooking}
         </a>
       </div>
     </div>

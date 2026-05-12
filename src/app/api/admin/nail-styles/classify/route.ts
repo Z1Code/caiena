@@ -7,7 +7,7 @@ const CLASSIFY_PROMPT = `You are a professional nail technician. Analyze this na
 Return ONLY a valid JSON object — no markdown, no explanation:
 
 {
-  "name": "<attractive Spanish name max 4 words, e.g. 'French Clásico Nude'>",
+  "name": "<attractive English name max 4 words, title case, e.g. 'Classic Nude French'>",
   "description": "<1 sentence in Spanish for a client, describing the style>",
   "category": "<french|gel|chrome|nail_art|minimal|bold|seasonal>",
   "estilo": "<french|solid|floral|geometrico|glitter_foil|ombre|chrome|minimalista|nail_art>",

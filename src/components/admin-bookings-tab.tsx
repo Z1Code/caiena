@@ -4,14 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { format, addDays, subDays, startOfWeek, addWeeks, subWeeks } from "date-fns";
 import { es } from "date-fns/locale";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
-import { AdminStaffTab } from "./admin-staff-tab";
-import { AdminScheduleTab } from "./admin-schedule-tab";
-import { AdminGroupsTab } from "./admin-groups-tab";
-import { AdminServicesTab } from "./admin-services-tab";
-import { AdminUsersTab } from "./admin-users-tab";
-import { AdminNailStylesTab } from "./admin-nail-styles-tab";
-import { AdminSiteTab } from "./admin-site-tab";
 
 interface Booking {
   id: string;
@@ -36,14 +28,8 @@ interface Stats {
 }
 
 type ViewMode = "today" | "week";
-type AdminTab = "reservas" | "staff" | "horarios" | "grupos" | "servicios" | "disenos" | "usuarios" | "sitio";
 
-interface AdminDashboardProps {
-  canManageUsers?: boolean;
-}
-
-export function AdminDashboard({ canManageUsers = false }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<AdminTab>("reservas");
+export function AdminBookingsTab() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("today");
@@ -86,7 +72,6 @@ export function AdminDashboard({ canManageUsers = false }: AdminDashboardProps) 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: newStatus }),
     });
-    // Refresh
     fetchStats();
     if (viewMode === "today") {
       fetchBookings(selectedDate, selectedDate);
@@ -96,196 +81,124 @@ export function AdminDashboard({ canManageUsers = false }: AdminDashboardProps) 
     }
   };
 
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: "/" });
-  };
-
   const todayStr = format(new Date(), "yyyy-MM-dd");
-  const tomorrowStr = format(addDays(new Date(), 1), "yyyy-MM-dd");
-
-  // Time blocks for the schedule grid (9:00 - 18:00)
   const timeSlots = Array.from({ length: 19 }, (_, i) => {
     const hour = Math.floor(i / 2) + 9;
     const min = (i % 2) * 30;
     return `${hour.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`;
   });
-
-  // Week days for week view
   const weekDays = Array.from({ length: 7 }, (_, i) =>
     format(addDays(new Date(weekStart + "T12:00:00"), i), "yyyy-MM-dd")
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
+    <>
+      {stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+          <StatCard label="Hoy" value={stats.today.count} sub="citas" accent />
+          <StatCard label="Manana" value={stats.tomorrow.count} sub="citas" />
+          <StatCard label="Pendientes" value={stats.totals.confirmed} sub="confirmadas" />
+          <StatCard label="Ingresos" value={`$${stats.totals.revenue}`} sub="completadas" />
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode("today")}
+            className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+              viewMode === "today"
+                ? "bg-accent text-white"
+                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            Dia
+          </button>
+          <button
+            onClick={() => setViewMode("week")}
+            className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+              viewMode === "week"
+                ? "bg-accent text-white"
+                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            Semana
+          </button>
+        </div>
+
+        {viewMode === "today" ? (
           <div className="flex items-center gap-3">
-            <span className="font-serif text-xl font-semibold text-foreground">Caiena</span>
-            <span className="text-xs bg-accent/10 text-accent-dark px-2 py-0.5 rounded-full">Admin</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="/" className="text-sm text-gray-500 hover:text-gray-700">Ver sitio</a>
-            <button onClick={handleLogout} className="text-sm text-red-500 hover:text-red-700">
-              Cerrar sesion
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Tab navigation */}
-      <div className="border-b border-gray-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-1">
-          {(["reservas", "staff", "horarios", "grupos", "servicios", "disenos", "sitio", ...(canManageUsers ? ["usuarios"] : [])] as AdminTab[]).map((tab) => {
-            const labels: Record<AdminTab, string> = { reservas: "Reservas", staff: "Empleadas", horarios: "Horarios", grupos: "Grupos", servicios: "Servicios", disenos: "Diseños", sitio: "Sitio", usuarios: "Usuarios" };
-            return (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? "border-accent text-accent-dark" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
-                {labels[tab]}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Non-reservas tabs */}
-        {activeTab === "servicios" && <AdminServicesTab />}
-        {activeTab === "disenos" && <AdminNailStylesTab />}
-        {activeTab === "sitio" && <AdminSiteTab />}
-        {activeTab === "usuarios" && canManageUsers && <AdminUsersTab />}
-        {activeTab === "staff" && <AdminStaffTab />}
-        {activeTab === "horarios" && <AdminScheduleTab />}
-        {activeTab === "grupos" && <AdminGroupsTab />}
-
-        {activeTab !== "reservas" ? null : <>
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-            <StatCard
-              label="Hoy"
-              value={stats.today.count}
-              sub="citas"
-              accent
-            />
-            <StatCard
-              label="Manana"
-              value={stats.tomorrow.count}
-              sub="citas"
-            />
-            <StatCard
-              label="Pendientes"
-              value={stats.totals.confirmed}
-              sub="confirmadas"
-            />
-            <StatCard
-              label="Ingresos"
-              value={`$${stats.totals.revenue}`}
-              sub="completadas"
-            />
-          </div>
-        )}
-
-        {/* View Toggle + Navigation */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2">
             <button
-              onClick={() => setViewMode("today")}
-              className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                viewMode === "today"
-                  ? "bg-accent text-white"
-                  : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-              }`}
+              onClick={() => setSelectedDate(format(subDays(new Date(selectedDate + "T12:00:00"), 1), "yyyy-MM-dd"))}
+              className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50"
             >
-              Dia
+              <ChevronLeft />
             </button>
-            <button
-              onClick={() => setViewMode("week")}
-              className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                viewMode === "week"
-                  ? "bg-accent text-white"
-                  : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              Semana
-            </button>
-          </div>
-
-          {viewMode === "today" ? (
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSelectedDate(format(subDays(new Date(selectedDate + "T12:00:00"), 1), "yyyy-MM-dd"))}
-                className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50"
-              >
-                <ChevronLeft />
-              </button>
-              <div className="text-center min-w-[180px]">
-                <span className="text-sm font-medium text-foreground capitalize">
-                  {format(new Date(selectedDate + "T12:00:00"), "EEEE d 'de' MMMM", { locale: es })}
-                </span>
-                {selectedDate === todayStr && (
-                  <span className="ml-2 text-xs bg-accent/10 text-accent-dark px-2 py-0.5 rounded-full">Hoy</span>
-                )}
-              </div>
-              <button
-                onClick={() => setSelectedDate(format(addDays(new Date(selectedDate + "T12:00:00"), 1), "yyyy-MM-dd"))}
-                className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50"
-              >
-                <ChevronRight />
-              </button>
-              {selectedDate !== todayStr && (
-                <button
-                  onClick={() => setSelectedDate(todayStr)}
-                  className="text-xs text-accent-dark hover:text-foreground"
-                >
-                  Hoy
-                </button>
+            <div className="text-center min-w-[180px]">
+              <span className="text-sm font-medium text-foreground capitalize">
+                {format(new Date(selectedDate + "T12:00:00"), "EEEE d 'de' MMMM", { locale: es })}
+              </span>
+              {selectedDate === todayStr && (
+                <span className="ml-2 text-xs bg-accent/10 text-accent-dark px-2 py-0.5 rounded-full">Hoy</span>
               )}
             </div>
-          ) : (
-            <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSelectedDate(format(addDays(new Date(selectedDate + "T12:00:00"), 1), "yyyy-MM-dd"))}
+              className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50"
+            >
+              <ChevronRight />
+            </button>
+            {selectedDate !== todayStr && (
               <button
-                onClick={() => setWeekStart(format(subWeeks(new Date(weekStart + "T12:00:00"), 1), "yyyy-MM-dd"))}
-                className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50"
+                onClick={() => setSelectedDate(todayStr)}
+                className="text-xs text-accent-dark hover:text-foreground"
               >
-                <ChevronLeft />
+                Hoy
               </button>
-              <span className="text-sm font-medium text-foreground min-w-[200px] text-center">
-                {format(new Date(weekStart + "T12:00:00"), "d MMM", { locale: es })} -{" "}
-                {format(addDays(new Date(weekStart + "T12:00:00"), 6), "d MMM yyyy", { locale: es })}
-              </span>
-              <button
-                onClick={() => setWeekStart(format(addWeeks(new Date(weekStart + "T12:00:00"), 1), "yyyy-MM-dd"))}
-                className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50"
-              >
-                <ChevronRight />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+            )}
           </div>
-        ) : viewMode === "today" ? (
-          <DayView
-            date={selectedDate}
-            bookings={bookings.filter((b) => b.date === selectedDate)}
-            timeSlots={timeSlots}
-            onStatusChange={handleStatusChange}
-          />
         ) : (
-          <WeekView
-            weekDays={weekDays}
-            bookings={bookings}
-            timeSlots={timeSlots}
-            todayStr={todayStr}
-          />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setWeekStart(format(subWeeks(new Date(weekStart + "T12:00:00"), 1), "yyyy-MM-dd"))}
+              className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50"
+            >
+              <ChevronLeft />
+            </button>
+            <span className="text-sm font-medium text-foreground min-w-[200px] text-center">
+              {format(new Date(weekStart + "T12:00:00"), "d MMM", { locale: es })} -{" "}
+              {format(addDays(new Date(weekStart + "T12:00:00"), 6), "d MMM yyyy", { locale: es })}
+            </span>
+            <button
+              onClick={() => setWeekStart(format(addWeeks(new Date(weekStart + "T12:00:00"), 1), "yyyy-MM-dd"))}
+              className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50"
+            >
+              <ChevronRight />
+            </button>
+          </div>
         )}
-        </>}
       </div>
-    </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+        </div>
+      ) : viewMode === "today" ? (
+        <DayView
+          date={selectedDate}
+          bookings={bookings.filter((b) => b.date === selectedDate)}
+          timeSlots={timeSlots}
+          onStatusChange={handleStatusChange}
+        />
+      ) : (
+        <WeekView
+          weekDays={weekDays}
+          bookings={bookings}
+          timeSlots={timeSlots}
+          todayStr={todayStr}
+        />
+      )}
+    </>
   );
 }
 
@@ -323,12 +236,10 @@ function DayView({
         </div>
       ) : (
         <div className="divide-y divide-gray-100">
-          {/* Time grid */}
           {timeSlots.map((time) => {
             const slotBookings = bookings.filter(
               (b) => b.startTime <= time && b.endTime > time && b.status !== "cancelled"
             );
-
             return (
               <div key={time} className="flex">
                 <div className="w-16 sm:w-20 shrink-0 py-3 px-3 text-xs text-gray-400 text-right border-r border-gray-100 bg-gray-50/50">
@@ -336,15 +247,9 @@ function DayView({
                 </div>
                 <div className="flex-1 min-h-[48px] relative">
                   {slotBookings.map((booking) => {
-                    // Only render at start time
                     if (booking.startTime !== time) return null;
-
                     return (
-                      <BookingBlock
-                        key={booking.id}
-                        booking={booking}
-                        onStatusChange={onStatusChange}
-                      />
+                      <BookingBlock key={booking.id} booking={booking} onStatusChange={onStatusChange} />
                     );
                   })}
                 </div>
@@ -369,7 +274,6 @@ function BookingBlock({
     completed: "bg-green-50 border-green-200 text-green-800",
     cancelled: "bg-gray-50 border-gray-200 text-gray-400 line-through",
   };
-
   const colors = statusColors[booking.status as keyof typeof statusColors] || statusColors.confirmed;
 
   return (
@@ -427,7 +331,6 @@ function WeekView({
   todayStr: string;
 }) {
   const dayLabels = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"];
-
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
       <table className="w-full min-w-[700px]">
@@ -438,12 +341,8 @@ function WeekView({
               const isToday = day === todayStr;
               const dayNum = format(new Date(day + "T12:00:00"), "d");
               const dayBookings = bookings.filter((b) => b.date === day && b.status === "confirmed");
-
               return (
-                <th
-                  key={day}
-                  className={`p-2 text-center border-l border-gray-100 ${isToday ? "bg-accent/5" : ""}`}
-                >
+                <th key={day} className={`p-2 text-center border-l border-gray-100 ${isToday ? "bg-accent/5" : ""}`}>
                   <span className="text-xs text-gray-400">{dayLabels[i]}</span>
                   <br />
                   <span className={`text-sm font-medium ${isToday ? "text-accent-dark" : "text-foreground"}`}>
@@ -468,31 +367,21 @@ function WeekView({
               {weekDays.map((day) => {
                 const isToday = day === todayStr;
                 const cellBookings = bookings.filter(
-                  (b) =>
-                    b.date === day &&
-                    b.startTime <= time &&
-                    b.endTime > time &&
-                    b.status !== "cancelled"
+                  (b) => b.date === day && b.startTime <= time && b.endTime > time && b.status !== "cancelled"
                 );
-
                 return (
-                  <td
-                    key={day}
-                    className={`border-l border-gray-100 p-0.5 align-top h-12 ${isToday ? "bg-accent/[0.02]" : ""}`}
-                  >
-                    {cellBookings
-                      .filter((b) => b.startTime === time)
-                      .map((b) => (
-                        <div
-                          key={b.id}
-                          className="text-[10px] bg-accent/10 border border-accent/20 rounded px-1.5 py-1 truncate text-accent-dark"
-                          title={`${b.clientName} - ${b.serviceName} (${b.startTime}-${b.endTime})`}
-                        >
-                          <span className="font-medium">{b.clientName.split(" ")[0]}</span>
-                          <br />
-                          <span className="opacity-60">{b.serviceName}</span>
-                        </div>
-                      ))}
+                  <td key={day} className={`border-l border-gray-100 p-0.5 align-top h-12 ${isToday ? "bg-accent/[0.02]" : ""}`}>
+                    {cellBookings.filter((b) => b.startTime === time).map((b) => (
+                      <div
+                        key={b.id}
+                        className="text-[10px] bg-accent/10 border border-accent/20 rounded px-1.5 py-1 truncate text-accent-dark"
+                        title={`${b.clientName} - ${b.serviceName} (${b.startTime}-${b.endTime})`}
+                      >
+                        <span className="font-medium">{b.clientName.split(" ")[0]}</span>
+                        <br />
+                        <span className="opacity-60">{b.serviceName}</span>
+                      </div>
+                    ))}
                   </td>
                 );
               })}

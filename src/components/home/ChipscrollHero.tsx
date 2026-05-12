@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, useCallback } from "react";
+import { getT, getClientLocale } from "@/i18n";
 
 // ── Config ─────────────────────────────────────────────────────────
 const TOTAL_FRAMES  = 140;
@@ -24,26 +25,27 @@ interface TextOverlay {
   endFrame: number;
 }
 
-const textOverlays: TextOverlay[] = [
-  {
-    // ~sec 1.4 → sec 3.2 ("Artesanal" delayed past the intro movement)
-    text: "Artesanal",
-    position: "bottom-left",
-    size: "large",
-    gradient: "linear-gradient(90deg, #e8c4b8, #f5e6d8, #dbb5a0, #b76e79, #e8c4b8)",
-    startFrame: 26,
-    endFrame: 62,
-  },
-  {
-    // ~sec 5.2 → sec 6.2 (near frame 98 when paints appear)
-    text: "Colorido",
-    position: "bottom-right",
-    size: "large",
-    gradient: "linear-gradient(90deg, #b76e79, #d4a5c9, #f5c6d6, #b76e79, #8c4f5c)",
-    startFrame: 92,
-    endFrame: 114,
-  },
-];
+function getTextOverlays(): TextOverlay[] {
+  const hero = getT(getClientLocale()).hero;
+  return [
+    {
+      text: hero.word1,
+      position: "bottom-left",
+      size: "large",
+      gradient: "linear-gradient(90deg, #e8c4b8, #f5e6d8, #dbb5a0, #b76e79, #e8c4b8)",
+      startFrame: 26,
+      endFrame: 62,
+    },
+    {
+      text: hero.word2,
+      position: "bottom-right",
+      size: "large",
+      gradient: "linear-gradient(90deg, #b76e79, #d4a5c9, #f5c6d6, #b76e79, #8c4f5c)",
+      startFrame: 92,
+      endFrame: 114,
+    },
+  ];
+}
 
 const FADE_RANGE  = 8;
 const FONT_FAMILY = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif';
@@ -184,6 +186,12 @@ export default function ChipscrollHero() {
   const [isLoading,    setIsLoading]    = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
   const [currentFrame, setCurrentFrame] = useState(0);
+  const [textOverlays, setTextOverlays] = useState<TextOverlay[]>([]);
+
+  // Initialize locale-aware text overlays on client
+  useEffect(() => {
+    setTextOverlays(getTextOverlays());
+  }, []);
 
   // Pre-load all frames
   useEffect(() => {

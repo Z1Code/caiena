@@ -624,6 +624,7 @@ const BADGE_COLORS: Record<string, string> = {
 function GenerateVariantsPanel() {
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
+  const [classifying, setClassifying] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "generating" | "done" | "error">("idle");
   const [variants, setVariants] = useState<Array<{ baseId: string; imagePath: string; status: string }>>([]);
@@ -631,13 +632,27 @@ function GenerateVariantsPanel() {
   const [publishLoading, setPublishLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
     setFile(f);
+    setName("");
     const reader = new FileReader();
     reader.onloadend = () => setPreview(reader.result as string);
     reader.readAsDataURL(f);
+
+    // Auto-classify to get name
+    setClassifying(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", f);
+      const res = await fetch("/api/admin/nail-styles/classify", { method: "POST", body: fd });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.name) setName(data.name);
+      }
+    } catch { /* user can type manually */ }
+    finally { setClassifying(false); }
   };
 
   const handleGenerate = async () => {
@@ -681,13 +696,21 @@ function GenerateVariantsPanel() {
           )}
         </div>
         <div className="flex-1 space-y-3">
-          <input
-            type="text"
-            placeholder="Nombre del diseño"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full text-sm border border-accent-light/30 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-accent/50"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              placeholder={classifying ? "Analizando diseño..." : "Nombre del diseño"}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={classifying}
+              className="w-full text-sm border border-accent-light/30 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-accent/50 disabled:bg-gray-50 disabled:text-gray-400 pr-8"
+            />
+            {classifying && (
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                <div className="w-3.5 h-3.5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
           <button
             onClick={handleGenerate}
             disabled={!file || status === "generating"}

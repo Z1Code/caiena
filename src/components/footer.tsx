@@ -1,4 +1,17 @@
-export function Footer() {
+import { getLocale } from "@/i18n/locale";
+import { getT } from "@/i18n";
+
+export async function Footer() {
+  const locale = await getLocale();
+  const t = getT(locale);
+
+  const navLinks = [
+    { href: "/reservar", label: t.footer.bookAppointment },
+    { href: "/prueba-virtual", label: t.footer.aiVirtualTryOn },
+    { href: "/generador", label: t.footer.designGenerator },
+    { href: "/gift-cards", label: "Gift Cards" },
+  ];
+
   return (
     <footer className="relative overflow-hidden noise-overlay">
       <div className="absolute inset-0 bg-foreground" />
@@ -16,22 +29,17 @@ export function Footer() {
               <span className="font-serif text-xl text-white tracking-wide">Caiena</span>
             </div>
             <p className="text-white/30 text-sm leading-relaxed max-w-[240px]">
-              Arte en cada una. Servicios profesionales de manicure y pedicure en Leander, TX.
+              {t.footer.tagline}
             </p>
           </div>
 
           {/* Links */}
           <div>
             <p className="text-white/50 text-[10px] tracking-[0.3em] uppercase mb-4">
-              Navegar
+              {t.footer.navigate}
             </p>
             <div className="flex flex-col gap-2.5">
-              {[
-                { href: "/reservar", label: "Reservar Cita" },
-                { href: "/prueba-virtual", label: "Prueba Virtual IA" },
-                { href: "/generador", label: "Generador de Disenos" },
-                { href: "/gift-cards", label: "Gift Cards" },
-              ].map((link) => (
+              {navLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
@@ -46,11 +54,11 @@ export function Footer() {
           {/* Contact */}
           <div>
             <p className="text-white/50 text-[10px] tracking-[0.3em] uppercase mb-4">
-              Contacto
+              {t.footer.contact}
             </p>
             <div className="flex flex-col gap-2.5 text-sm text-white/40">
               <span>Leander, TX 78641</span>
-              <span>Solo con cita previa</span>
+              <span>{t.footer.byAppointment}</span>
               <a
                 href="https://www.instagram.com/caiena.us"
                 target="_blank"
@@ -72,7 +80,7 @@ export function Footer() {
             &copy; {new Date().getFullYear()} Caiena Beauty Nails
           </p>
           <p className="text-[10px] text-white/20 tracking-wider">
-            Hecho con amor en Texas
+            {t.footer.madeWithLove}
           </p>
         </div>
       </div>

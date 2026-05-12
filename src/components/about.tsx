@@ -1,6 +1,10 @@
 import { ScrollReveal, SpringReveal } from "@/components/scroll-reveal";
+import { getLocale } from "@/i18n/locale";
+import { getT } from "@/i18n";
 
-export function About() {
+export async function About() {
+  const locale = await getLocale();
+  const t = getT(locale).about;
   return (
     <section id="sobre-mi" className="py-28 sm:py-36 relative overflow-hidden noise-overlay">
       <div className="absolute inset-0 bg-white" />
@@ -32,9 +36,9 @@ export function About() {
           {/* Content side */}
           <div className="lg:col-span-6 lg:col-start-7">
             <ScrollReveal index={0}>
-              <p className="text-muted tracking-[0.4em] uppercase text-[10px] mb-3">La Artista</p>
+              <p className="text-muted tracking-[0.4em] uppercase text-[10px] mb-3">{t.label}</p>
               <h2 className="font-serif text-4xl sm:text-5xl font-semibold text-foreground leading-tight mb-8">
-                Hola, soy
+                {t.greeting}
                 <br />
                 <span className="italic gradient-text">Roxanna</span>
               </h2>
@@ -42,22 +46,13 @@ export function About() {
 
             <div className="space-y-5 text-foreground/50 leading-relaxed">
               <ScrollReveal index={1}>
-                <p>
-                  Soy una apasionada del arte en unas con anos de experiencia
-                  creando disenos unicos para cada clienta.
-                </p>
+                <p>{t.p1}</p>
               </ScrollReveal>
               <ScrollReveal index={2}>
-                <p>
-                  Trabajo desde la comodidad de mi hogar en Leander, TX, ofreciendo
-                  un ambiente relajado y privado donde disfrutas de un servicio
-                  profesional sin las prisas de un salon tradicional.
-                </p>
+                <p>{t.p2}</p>
               </ScrollReveal>
               <ScrollReveal index={3}>
-                <p className="text-foreground/70 font-medium">
-                  Cada set de unas es una oportunidad para expresar tu personalidad.
-                </p>
+                <p className="text-foreground/70 font-medium">{t.p3}</p>
               </ScrollReveal>
             </div>
 

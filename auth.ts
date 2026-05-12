@@ -37,18 +37,24 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         token.displayName = user.name ?? ""
         token.roleFetchedAt = Date.now()
 
-        // Upsert user profile (superadmin role not stored in DB)
-        await db
-          .insert(userProfiles)
-          .values({
+        // Upsert user profile by email (googleId/sub may change across logins in Auth.js v5)
+        const existing = await db
+          .select({ id: userProfiles.id })
+          .from(userProfiles)
+          .where(eq(userProfiles.email, user.email!))
+          .limit(1)
+        if (existing.length > 0) {
+          await db
+            .update(userProfiles)
+            .set({ googleId: token.sub! })
+            .where(eq(userProfiles.id, existing[0].id))
+        } else {
+          await db.insert(userProfiles).values({
             googleId: token.sub!,
             email: user.email!,
             role: role === "superadmin" ? "user" : role,
           })
-          .onConflictDoUpdate({
-            target: userProfiles.googleId,
-            set: { email: user.email! },
-          })
+        }
         return token
       }
 

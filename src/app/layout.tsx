@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import { Playfair_Display, Cormorant_Garamond, Jost } from "next/font/google";
 import { AIChatbot } from "@/components/ai-chatbot";
 import { Providers } from "./providers";
+import { getLocale } from "@/i18n/locale";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -52,14 +53,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
   return (
     <html
-      lang="es"
+      lang={locale}
       className={`${geistSans.variable} ${playfair.variable} ${cormorant.variable} ${jost.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">

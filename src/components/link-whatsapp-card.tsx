@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { getT, getClientLocale } from "@/i18n"
 
 export function LinkWhatsAppCard() {
   const [loading, setLoading] = useState(false)
@@ -10,6 +11,7 @@ export function LinkWhatsAppCard() {
   const router = useRouter()
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const t = getT(getClientLocale()).whatsapp
 
   // Poll every 3 seconds while waiting for bot confirmation
   function startPolling() {
@@ -26,7 +28,7 @@ export function LinkWhatsAppCard() {
     timeoutRef.current = setTimeout(() => {
       stopPolling()
       setWaiting(false)
-      setError("El tiempo expiró. Genera un nuevo enlace e inténtalo de nuevo.")
+      setError(t.errorTimeout)
     }, 5 * 60 * 1000)
   }
 
@@ -48,7 +50,7 @@ export function LinkWhatsAppCard() {
       setWaiting(true)
       startPolling()
     } catch {
-      setError("No se pudo generar el enlace. Intenta de nuevo.")
+      setError(t.errorGenerate)
     } finally {
       setLoading(false)
     }
@@ -66,10 +68,10 @@ export function LinkWhatsAppCard() {
           </div>
 
           <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
-            Conecta tu WhatsApp
+            {t.title}
           </h2>
           <p className="text-sm text-foreground/60 mb-6 leading-relaxed">
-            Para ver tus citas e historial, necesitamos vincular tu cuenta con tu número de WhatsApp.
+            {t.description}
           </p>
 
           {error && (
@@ -82,16 +84,16 @@ export function LinkWhatsAppCard() {
             <div className="space-y-3">
               <div className="flex items-center justify-center gap-2 text-sm text-foreground/60">
                 <div className="w-4 h-4 border-2 border-green-400/40 border-t-green-500 rounded-full animate-spin" />
-                Esperando confirmación...
+                {t.waiting}
               </div>
               <p className="text-xs text-foreground/40">
-                Envía el mensaje que se abrió en WhatsApp para confirmar
+                {t.waitingHint}
               </p>
               <button
                 onClick={() => { setWaiting(false); stopPolling() }}
                 className="text-xs text-foreground/40 hover:text-foreground/60 underline"
               >
-                Cancelar
+                {t.cancel}
               </button>
             </div>
           ) : (
@@ -103,10 +105,10 @@ export function LinkWhatsAppCard() {
               {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  Generando enlace...
+                  {t.generating}
                 </>
               ) : (
-                "Validar por WhatsApp"
+                t.validate
               )}
             </button>
           )}
